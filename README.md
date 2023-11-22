@@ -3,8 +3,8 @@ Proiect Sisteme de Operare (SO) Anul 2, Semestrul 1, Facultatea de Matematica si
 
 # DiskAnalyzer
 
-Capatina Razvan-Nicolae ($252$)
-Buca Mihnea-Vicentiu ($252$)
-Mihalache Sebastian-Stefan ($252$)
+Capatina Razvan-Nicolae ($252$) <br/> 
+Buca Mihnea-Vicentiu ($252$) <br/>
+Mihalache Sebastian-Stefan ($252$) <br/>
 Luculescu Teodor ($251$)
 
