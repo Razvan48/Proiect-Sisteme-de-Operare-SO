@@ -1,9 +1,14 @@
 # Proiect-Sisteme-de-Operare-SO
 Proiect Sisteme de Operare (SO) Anul 2, Semestrul 1, Facultatea de Matematica si Informatica, Universitatea din Bucuresti
 
+Capatina Razvan-Nicolae ($252$) <br/> 
+Buca Mihnea-Vicentiu ($252$) <br/>
+Mihalache Sebastian-Stefan ($252$) <br/>
+Luculescu Teodor ($251$)
+
 # DiskAnalyzer
 
-Creati un daemon care analizeaza spatiul utilizat pe un dispozitiv de stocare incepand de la o cale data, si construiti un program utilitar care permite folosirea acestei functionalitati din linia de comanda.
+Creati un daemon care analizeaza spatiul utilizat pe un dispozitiv de stocare incepand de la o cale data, si construiti un program utilitar care permite folosirea acestei functionalitati din linia de comanda. <br>
 Daemonul trebuie sa analizeze spatiul ocupat recursiv, pentru fiecare director continut, indiferent de adancime.
 
 Utilitarul la linia de comanda se va numi "da" si trebuie sa expuna urmatoarele functionalitati: 
@@ -26,10 +31,3 @@ Utilitarul la linia de comanda se va numi "da" si trebuie sa expuna urmatoarele 
       -l, --list   list all analysis tasks, with their ID and the corresponding root p
       -p, --print <id>  print analysis report for those tasks that are "done"
 ```
-
-
-Capatina Razvan-Nicolae ($252$) <br/> 
-Buca Mihnea-Vicentiu ($252$) <br/>
-Mihalache Sebastian-Stefan ($252$) <br/>
-Luculescu Teodor ($251$)
-
