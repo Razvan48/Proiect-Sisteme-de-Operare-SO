@@ -11,7 +11,7 @@ Luculescu Teodor ($251$)
 # Setup
 
 ```
-sh setup.sh
+bash setup.sh
 ```
 
 # Descriere
