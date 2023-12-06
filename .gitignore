@@ -1,5 +1,15 @@
+# Ignore all
+*
+
+# Unignore all with extensions
+!*.*
+
+# Unignore all dirs
+!*/
+
 # Ignore compiled executables
 *.out
 *.exe
 *.o
 *.obj
+
