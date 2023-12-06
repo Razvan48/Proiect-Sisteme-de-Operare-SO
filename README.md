@@ -8,6 +8,14 @@ Luculescu Teodor ($251$)
 
 # DiskAnalyzer
 
+# Setup
+
+```
+sh setup.sh
+```
+
+# Descriere
+
 Creati un daemon care analizeaza spatiul utilizat pe un dispozitiv de stocare incepand de la o cale data, si construiti un program utilitar care permite folosirea acestei functionalitati din linia de comanda. <br>
 Daemonul trebuie sa analizeze spatiul ocupat recursiv, pentru fiecare director continut, indiferent de adancime.
 
