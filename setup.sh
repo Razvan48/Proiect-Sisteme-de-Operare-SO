@@ -1,8 +1,9 @@
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 echo $SCRIPT_DIR
 
-gcc "$SCRIPT_DIR/da.cpp" -o "$SCRIPT_DIR/da"
-echo "da.cpp has been compiled."
+g++ "$SCRIPT_DIR/da.cpp" -o "$SCRIPT_DIR/da" -std=c++11 -pthread -lrt
+g++ "$SCRIPT_DIR/the_daemon.cpp" -o "$SCRIPT_DIR/the_daemon" -std=c++11 -pthread -lrt
+echo "project compiled"
 
 IFS=":" read -ra path_dirs <<< "$PATH"
 
@@ -17,7 +18,7 @@ for dir in "${path_dirs[@]}"; do
 done
 
 if [ "$directory_found" = true ]; then
-	echo "Directory is already in the PATH."
+	echo "Directory is already in the PATH"
 else
 	echo "" >> ~/.bashrc
 	echo "export PATH="$SCRIPT_DIR:$PATH"" >> ~/.bashrc
@@ -25,7 +26,7 @@ else
 
 	export PATH="$SCRIPT_DIR:$PATH"
 
-	echo "Directory added to the PATH."
+	echo "Directory added to the PATH"
 
 	while true; do
 	    read -p "Restart the terminal"
