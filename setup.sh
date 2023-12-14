@@ -29,7 +29,7 @@ else
 	echo "Directory added to the PATH"
 
 	while true; do
-	    read -p "Restart the terminal"
+	    read -p "Close the terminal"
 	done
 fi
 
