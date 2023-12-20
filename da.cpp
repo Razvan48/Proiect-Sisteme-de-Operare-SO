@@ -25,7 +25,8 @@
 	int shm_semaphore_fd = 0;
 	char* shm_ptr = NULL;
 	void* shm_semaphore_ptr = NULL;
-	sem_t* sem = NULL;
+	sem_t* sem_1 = NULL;
+	sem_t* sem_2 = NULL;
 	char* option = NULL;
 	char* msg = NULL;
 
@@ -49,20 +50,25 @@ int main(int argc, char* argv[])
 
 	init_shm_buffer(); // obtin memoria partajata (si eventual pornesc daemonul)
 	init_shm_semaphore(); // obtin semaforul partajat
-	
+
+	char opt = '\0';
+
 	if(strcmp(argv[1], "-k") == 0) 
-		*option = KILL;
+		opt = KILL;
 	else
 		if(strcmp(argv[1], "-a") == 0)
-			*option = ADD_MSG;
+			opt = ADD_MSG;
 		else
 			if(strcmp(argv[1], "-p") == 0)
-				*option = PRINT;
+				opt = PRINT;
 			else
 			{
 				printf("continutul help-ului.......\n");
 				return -1;
 			} // setez optiunea (primul octet din memoria partajata)
+	
+	sem_wait(sem_2); // astept sa termine daemonul de lucrat cu memoria partajata
+	*option = opt;
 
 	if(*option == ADD_MSG)
 		strcpy(msg, argv[2]); // scriu mesajul (calea) in memoria partajata
@@ -70,7 +76,7 @@ int main(int argc, char* argv[])
 	if(*option == PRINT)
 		printf("da: %s\n", msg); // afisez din memoria partajata	
 
-	sem_post(sem); // daemonul era blocat in sem_wait(sem) (semaforul e zero) pana termin de scris in memoria partajata;
+	sem_post(sem_1); // daemonul era blocat in sem_wait(sem) (semaforul e zero) pana termin de scris in memoria partajata;
 					// il eliberez si imi termin executia
 
 
@@ -137,7 +143,6 @@ void init_shm_semaphore()
 		exit(errno);
 	} // am obtinut semaforul partajat cu daemonul
 	
-	sem = (sem_t*) shm_semaphore_ptr;
+	sem_1 = (sem_t*) shm_semaphore_ptr;
+	sem_2 = (sem_t*) shm_semaphore_ptr + sizeof(sem_t);
 }
-
-
