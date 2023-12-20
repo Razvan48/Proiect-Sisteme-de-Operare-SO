@@ -24,7 +24,8 @@
 	int shm_semaphore_fd = 0;
 	char* shm_ptr = NULL;
 	void* shm_semaphore_ptr = NULL;
-	sem_t* sem = NULL;
+	sem_t* sem_1 = NULL;
+	sem_t* sem_2 = NULL;
 	bool isActive = true;
 	char* option = NULL;
 	char* msg = NULL;
@@ -46,13 +47,28 @@ int main(int argc, char* argv[])
 		return errno; 
 	if(pid > 0) 
 	{
+		wait();
 		return 0;
 	} // parintele se termina; fiul (daemonul) a pierdut contactul cu terminalul; 
 		// procesul "da" care a pornit parintele se opreste din wait(NULL), stiind ca daemonul functioneaza
+	
+	if(setsid() < 0) // creez o noua sesiune pentru a ma detasa de orice terminal
+	{
+		perror(NULL);
+		return errno;
+	}	
+
+	pid = fork(); // creez o noua sesiune pentru a ma detasa de orice terminal
+	if(pid < 0)
+		return errno; 
+	if(pid > 0) 
+	{
+		return 0;
+	}
 
 	while(isActive)
 	{
-		sem_wait(sem); // semaforul a fost creat cu valoarea zero, deci astept sa il incrementeze "da" (<=> astept
+		sem_wait(sem_1); // semaforul a fost creat cu valoarea zero, deci astept sa il incrementeze "da" (<=> astept
 						// sa fie rulat ./da -option .... si sa imi trimita o comanda)
 
 		if(*option == KILL)
@@ -62,6 +78,8 @@ int main(int argc, char* argv[])
 		}
 
 		jobs();    // "munca" efectiva a daemonului
+
+		sem_post(sem_2); // daemonul spune ca a terminat de procesat stringul din shared memory
 
 	}
 
@@ -127,8 +145,10 @@ void init_shm_semaphore()
 		exit(errno);
 	}
 
-	sem = (sem_t*) shm_semaphore_ptr;
-	sem_init(sem, 1, 0); // initializ semaforul cu zero, pentru ca daemonul sa se blocheze in asteptare pana la prima comanda de la "da"
+	sem_1 = (sem_t*) shm_semaphore_ptr;
+	sem_2 = (sem_t*) shm_semaphore_ptr + sizeof(sem_t);
+	sem_init(sem_1, 1, 0); // initializ semaforul cu zero, pentru ca daemonul sa se blocheze in asteptare pana la prima comanda de la "da"
+	sem_init(sem_2, 1, 1); // initializ semaforul cu unu, pentru ca "da" sa poata scrie prima comanda
 }
 
 void jobs()
@@ -142,5 +162,3 @@ void jobs()
 			strcat(msg, the_time); // doar adaug data si ora la mesajul primit de la "da"
 		}
 }
-
-
