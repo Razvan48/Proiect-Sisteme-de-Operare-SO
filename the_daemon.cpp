@@ -2,6 +2,7 @@
 #include <fstream>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <unistd.h>
@@ -47,7 +48,7 @@ int main(int argc, char* argv[])
 		return errno; 
 	if(pid > 0) 
 	{
-		wait();
+		wait(NULL);
 		return 0;
 	} // parintele se termina; fiul (daemonul) a pierdut contactul cu terminalul; 
 		// procesul "da" care a pornit parintele se opreste din wait(NULL), stiind ca daemonul functioneaza
