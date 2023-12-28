@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -11,6 +12,8 @@
 #include <semaphore.h>
 #include <chrono>
 #include <time.h>
+
+#include "communication.hpp"	// TODO: de folosit
 
 #define KILL 'k'
 #define ADD_MSG 'a'

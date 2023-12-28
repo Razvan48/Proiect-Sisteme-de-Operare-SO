@@ -13,6 +13,8 @@
 #include <string.h>
 #include <sys/wait.h>
 
+#include "communication.hpp"	// TODO: de folosit
+
 
 #define KILL 'k'
 #define ADD_MSG 'a'
