@@ -14,6 +14,9 @@
 #include <time.h>
 
 #include "communication.hpp"	// TODO: de folosit
+#include "job_system.hpp"	// TODO: de folosit
+
+//in codul de mai jos am comentat tot ce implica jobs (avem std::map jobs in job_system.hpp)
 
 #define KILL 'k'
 #define ADD_MSG 'a'
@@ -39,7 +42,7 @@ void init_shm_buffer();
 
 void init_shm_semaphore();
 
-void jobs();
+// void jobs();
 
 int main(int argc, char* argv[])
 {
@@ -81,7 +84,7 @@ int main(int argc, char* argv[])
 			continue; // 
 		}
 
-		jobs();    // "munca" efectiva a daemonului
+		// jobs();    // "munca" efectiva a daemonului
 
 		sem_post(sem_2); // daemonul spune ca a terminat de procesat stringul din shared memory
 
@@ -155,6 +158,7 @@ void init_shm_semaphore()
 	sem_init(sem_2, 1, 1); // initializ semaforul cu unu, pentru ca "da" sa poata scrie prima comanda
 }
 
+/* am comentat asta pentru ca avem std::map de jobs
 void jobs()
 {
 	if(*option == ADD_MSG)
@@ -166,3 +170,4 @@ void jobs()
 			strcat(msg, the_time); // doar adaug data si ora la mesajul primit de la "da"
 		}
 }
+*/

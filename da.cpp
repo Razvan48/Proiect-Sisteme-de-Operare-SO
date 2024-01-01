@@ -14,7 +14,7 @@
 #include <sys/wait.h>
 
 #include "communication.hpp"	// TODO: de folosit
-
+#include "job_system.hpp"	// TODO: de folosit
 
 #define KILL 'k'
 #define ADD_MSG 'a'
