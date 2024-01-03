@@ -58,14 +58,14 @@ void addJob(const std::string& path, int priority = 1)
 		//jobs[pathToId[path]] = {path, priority};
 		//jobs.emplace(std::make_pair((int)pathToId[path], Job(path, priority)));
 		//jobs[pathToId[path]](path, priority);
-		jobs.insert(pathToId[path], Job(path, priority)); //TO DO: nu merge
+		//jobs.insert(pathToId[path], Job(path, priority));
+		jobs[pathToId[path]].path = path; // TO DO: merge asa?
+		jobs[pathToId[path]].priority = priority;
 	}
 	else //exista jobul (in acest caz doar dau update la prioritate)
 	{
 		jobs[pathToId[path]].m.lock();
-		
 		jobs[pathToId[path]].priority = priority;
-		
 		jobs[pathToId[path]].m.unlock();
 	}
 }
@@ -135,9 +135,14 @@ void deleteJob(int id) //sterge job-ul cu id-ul dat
 		return;
 	}
 	
+	jobs.find(id)->second.m.lock();
 	std::string pathJob = jobs.find(id)->second.path;
 	pathToId.erase(pathJob);
+	jobs.find(id)->second.m.unlock();
 	stopJob(id);
+	
+	//e thread-safe?
+	
 	jobs.erase(id);
 }
 
