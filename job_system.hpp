@@ -73,12 +73,16 @@ void addJob(const std::string& path, int priority = 1)
 			perror(NULL);
 			return;
 		}
+		
+		printf("Job with id %d created\n", pathToId[path]);
 	}
 	else //exista jobul (in acest caz doar dau update la prioritate)
 	{
 		pthread_mutex_lock(&(jobs[pathToId[path]].m));
 		jobs[pathToId[path]].priority = priority;
 		pthread_mutex_unlock(&(jobs[pathToId[path]].m));
+		
+		printf("Job with id %d already existed. Only updated the priority\n", pathToId[path]);
 	}
 }
 
@@ -306,6 +310,18 @@ void* threadWork(void* job) //functia rulata de fiecare thread in parte
 	
 	processDirectory(path, ((Job*)job)->nrBytesCrt, (*((Job*)job)));
 	
+	//un thread se incheie doar daca utilizatorul a cerut explicit asta (altfel sta degeaba intr-un while)
+	pthread_mutex_lock(&(((Job*)job)->m));
+	while (((Job*)job)->status != JobStatus::Ending)
+	{
+		pthread_mutex_unlock(&(((Job*)job)->m));
+		
+		//alt cod
+		sleep(TIMP_ASTEPTARE_THREAD);
+		
+		pthread_mutex_lock(&(((Job*)job)->m));
+	}
+	
 	return NULL; //
 }
 
@@ -314,7 +330,7 @@ void displayJobs() //afiseaza job-urile active
 	for (auto& it : jobs)
 	{
 		pthread_mutex_lock(&(it.second).m);
-		printf("Id: %d Path: %s ", it.first, (it.second).path);
+		printf("Id: %d Path: %s Number of bytes processed %d ", it.first, (it.second).path, (it.second).nrBytesCrt);
 		if ((it.second).nrBytesTotal > 0)
 			printf("Done: %lf\n", 1.0 * (it.second).nrBytesCrt / (it.second).nrBytesTotal);
 		else
