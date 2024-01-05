@@ -1,6 +1,6 @@
 #pragma once
 
-enum class Task : char
+enum class TaskType : char
 {
     ADD         = 'a',
     SUSPEND     = 'S', 
@@ -14,30 +14,20 @@ enum class Task : char
     DEFAULT     = '?'
 };
 
-const Task getTask(const char& ch)
+const TaskType getTask(const char& ch)
 {
     switch (ch)
     {
-        case 'a':     return Task::ADD;       break;
-        case 'S':     return Task::SUSPEND;   break;
-        case 'R':     return Task::RESUME;    break;
-        case 'r':     return Task::REMOVE;    break;
-        case 'i':     return Task::INFO;      break;
-        case 'l':     return Task::LIST;      break;
-        case 'p':     return Task::PRINT;     break;
-        case 'k':     return Task::TERMINATE; break;
+        case 'a':     return TaskType::ADD;       break;
+        case 'S':     return TaskType::SUSPEND;   break;
+        case 'R':     return TaskType::RESUME;    break;
+        case 'r':     return TaskType::REMOVE;    break;
+        case 'i':     return TaskType::INFO;      break;
+        case 'l':     return TaskType::LIST;      break;
+        case 'p':     return TaskType::PRINT;     break;
+        case 'k':     return TaskType::TERMINATE; break;
 
-        default:      return Task::DEFAULT;   break;
+        default:      return TaskType::DEFAULT;   break;
     }
 }
-
-/*
-    Task task = Task::ADD;
-    static_cast<char>(task) => return char
-*/ 
-
-/*
-    TODO:
-    nume pt memoria partajata
-*/
 
