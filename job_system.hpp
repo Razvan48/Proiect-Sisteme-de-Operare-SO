@@ -309,6 +309,20 @@ void* threadWork(void* job) //functia rulata de fiecare thread in parte
 	return NULL; //
 }
 
+void displayJobs() //afiseaza job-urile active
+{
+	for (auto& it : jobs)
+	{
+		pthread_mutex_lock(&(it.second).m);
+		printf("Id: %d Path: %s ", it.first, (it.second).path);
+		if ((it.second).nrBytesTotal > 0)
+			printf("Done: %lf\n", 1.0 * (it.second).nrBytesCrt / (it.second).nrBytesTotal);
+		else
+			printf("Done: %lf\n", 0.0);
+		pthread_mutex_unlock(&(it.second).m);
+	}
+}
+
 
 
 
