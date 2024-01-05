@@ -22,20 +22,26 @@
 #define ADD_MSG 'a'
 #define PRINT 'p'
 
+
+	char shm_input_name[] = "/shared_buffer_input";
+	char shm_output_name[] = "/shared_buffer_output";
+	char semaphore_1_name[] = "/shared_semaphore_1";
+	char semaphore_2_name[] = "/shared_semaphore_2";
+
 	pid_t pid;
-	size_t shm_size = 0;
-	size_t shm_semaphore_size = 0;
-	char shm_name[] = "/shared_buffer";
-	char shm_semaphore_name[] ="/shared_semaphore";
-	int shm_fd = 0;
-	int shm_semaphore_fd = 0;
-	char* shm_ptr = NULL;
-	void* shm_semaphore_ptr = NULL;
+	size_t shm_size_input = 0;
+	size_t shm_size_output = 0;
+	int shm_input_fd = 0;
+	int shm_output_fd = 0;
+	char* shared_buffer_input = NULL;
+	char* shared_buffer_output = NULL;
 	sem_t* sem_1 = NULL;
 	sem_t* sem_2 = NULL;
-	bool isActive = true;
 	char* option = NULL;
+	char* priority = NULL;
 	char* msg = NULL;
+
+	bool isActive = true;
 
 
 void init_shm_buffer();
@@ -84,15 +90,34 @@ int main(int argc, char* argv[])
 			continue; // 
 		}
 
-		// jobs();    // "munca" efectiva a daemonului
+		/*jobs();    // "munca" efectiva a daemonului
+		if(*option == PRINT)
+		{
 
+			strcpy(shared_buffer_output, "");
+			for(auto i: s)
+				{strcat(shared_buffer_output, i.c_str());
+				strcat(shared_buffer_output, "\n");}
+		}
+
+		if(*option == PRINT)
+		{
+			sem_post(sem_2);
+		}*/
 		sem_post(sem_2); // daemonul spune ca a terminat de procesat stringul din shared memory
 
 	}
 
-	shm_unlink(shm_name);
-	shm_unlink(shm_semaphore_name);
-	
+	sem_close(sem_1);
+	sem_close(sem_2);
+	munmap(shared_buffer_input, shm_size_input);
+	munmap(shared_buffer_output, shm_size_output);
+
+	shm_unlink(shm_input_name);
+	shm_unlink(shm_output_name);
+	sem_unlink(semaphore_1_name);
+	sem_unlink(semaphore_2_name);
+
 	return 0;
 }
 
@@ -100,62 +125,84 @@ int main(int argc, char* argv[])
 
 void init_shm_buffer()
 {
-	shm_fd = shm_open(shm_name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR); // creez memoria partajata (functia se executa o singura data, la pornirea daemonului)
-	if(shm_fd < 0)
+	// input buffer
+	shm_input_fd = shm_open(shm_input_name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR); // creez memoria partajata (functia se executa o singura data, la pornirea daemonului)
+	if(shm_input_fd < 0)
 	{
 		perror(NULL);
 		exit(errno);
 	}
-	shm_size = getpagesize();
-	if(ftruncate(shm_fd, shm_size) == -1)
+	shm_size_input = getpagesize();
+	if(ftruncate(shm_input_fd, shm_size_input) == -1)
 	{
 		perror(NULL);
-		shm_unlink(shm_name);
-		exit(errno);
-	}
-
-	shm_ptr = (char*) mmap(0, shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
-	if(shm_ptr == MAP_FAILED)
-	{
-		perror(NULL);
-		shm_unlink(shm_name);
+		shm_unlink(shm_input_name);
 		exit(errno);
 	}
 
-	option = shm_ptr; // optiunea - primul octet
-	msg = shm_ptr + sizeof(char); // mesajul (calea) restul
+	shared_buffer_input = (char*) mmap(0, shm_size_input, PROT_READ | PROT_WRITE, MAP_SHARED, shm_input_fd, 0);
+	if(shared_buffer_input == MAP_FAILED)
+	{
+		perror(NULL);
+		shm_unlink(shm_input_name);
+		exit(errno);
+	}
+
+	option = shared_buffer_input; // optiunea 
+	priority = shared_buffer_input + sizeof(char); // prioritatea
+	msg = shared_buffer_input + 2*sizeof(char); // mesajul (calea) restul
 	*option = '\0';
 	strcpy(msg, "");
+
+	
+	// output buffer
+	shm_output_fd = shm_open(shm_output_name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR); 
+	if(shm_output_fd < 0)
+	{
+		perror(NULL);
+		shm_unlink(shm_input_name);
+		munmap(shared_buffer_input, shm_size_input);
+		exit(errno);
+	}
+	
+	shm_size_output = getpagesize();
+	if(ftruncate(shm_output_fd, shm_size_output) == -1)
+	{
+		perror(NULL);
+		shm_unlink(shm_input_name);
+		shm_unlink(shm_output_name);
+		munmap(shared_buffer_input, shm_size_input);
+		exit(errno);
+	}
+
+	shared_buffer_output = (char*) mmap(0, shm_size_output, PROT_READ | PROT_WRITE, MAP_SHARED, shm_output_fd, 0);
+	if(shared_buffer_output == MAP_FAILED)
+	{
+		perror(NULL);
+		shm_unlink(shm_input_name);
+		shm_unlink(shm_output_name);
+		munmap(shared_buffer_input, shm_size_input);
+		exit(errno);
+	}
 }
 
 void init_shm_semaphore()
 {
-	shm_semaphore_fd = shm_open(shm_semaphore_name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR); // creez semaforul partajat (functia se executa o singura data, la pornirea daemonului)
-	if(shm_semaphore_fd < 0)
+	sem_1 = sem_open(semaphore_1_name, O_RDWR|O_CREAT, S_IRUSR|S_IWUSR, 0);
+	if(sem_1 == SEM_FAILED)
 	{
 		perror(NULL);
-		exit(errno);
-	}
-	shm_semaphore_size = getpagesize();
-	if(ftruncate(shm_semaphore_fd, shm_size) == -1)
-	{
-		perror(NULL);
-		shm_unlink(shm_semaphore_name);
 		exit(errno);
 	}
 
-	shm_semaphore_ptr = mmap(0, shm_semaphore_size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_semaphore_fd, 0);
-	if(shm_semaphore_ptr == MAP_FAILED)
+	sem_2 = sem_open(semaphore_2_name, O_RDWR|O_CREAT, S_IRUSR|S_IWUSR, 1);
+	if(sem_2 == SEM_FAILED)
 	{
 		perror(NULL);
-		shm_unlink(shm_semaphore_name);
+		sem_unlink(semaphore_1_name);
 		exit(errno);
 	}
-
-	sem_1 = (sem_t*) shm_semaphore_ptr;
-	sem_2 = (sem_t*) shm_semaphore_ptr + sizeof(sem_t);
-	sem_init(sem_1, 1, 0); // initializ semaforul cu zero, pentru ca daemonul sa se blocheze in asteptare pana la prima comanda de la "da"
-	sem_init(sem_2, 1, 1); // initializ semaforul cu unu, pentru ca "da" sa poata scrie prima comanda
+	strcpy(shared_buffer_output, "");
 }
 
 /* am comentat asta pentru ca avem std::map de jobs
@@ -167,7 +214,10 @@ void jobs()
 			std::time_t current_time_epoch = std::chrono::system_clock::to_time_t(time_stamp);
 			char the_time[200] = "";
 			sprintf(the_time, " - timestamp  %s", std::ctime(&current_time_epoch));
-			strcat(msg, the_time); // doar adaug data si ora la mesajul primit de la "da"
+			std::string mesaj;
+			mesaj.insert(mesaj.size(), msg);
+			mesaj.insert(mesaj.size(), the_time);
+			s.insert(mesaj);
 		}
 }
 */
