@@ -108,6 +108,8 @@ int main(int argc, char* argv[])
 			
 			case TaskType::SUSPEND:
 				id = *intInput;
+
+				outputMsg = pauseJob(id);
 			break;
 			
 			case TaskType::RESUME:
