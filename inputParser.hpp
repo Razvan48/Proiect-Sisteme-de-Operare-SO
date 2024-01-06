@@ -103,13 +103,6 @@ void parseInput(int argc, char* argv[], TaskType& taskType, std::string& dir, in
 				return;
 			}
 		}
-		
-		/*
-			TODO: de pus in the_daemon.cpp
-			- verifica daca exista folder-ul in sistem => Directory ’/home/user/my_repo/repo2’ not found
-			- verifica daca nu este deja adaugat in daemon => Directory ’/home/user/my_repo/repo2’ is already included in analysis with ID ’2’
-			- daca totul merge => Created analysis task with ID ’2’ for ’/home/user/my_repo’ and priority ’high’
-		*/
 
 		/*
 			trimite la the_daemon.cpp

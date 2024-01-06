@@ -95,11 +95,15 @@ int main(int argc, char* argv[])
 		int priority = 0;
 		int id = 0;
 
+		std::string outputMsg;
+
 		switch (taskType)
 		{
 			case TaskType::ADD:
 				priority = *intInput;
 				dir = std::string(msg);
+
+				outputMsg = addJob(dir, priority);
 			break;
 			
 			case TaskType::SUSPEND:
@@ -128,6 +132,7 @@ int main(int argc, char* argv[])
 			
 			case TaskType::TERMINATE:
 				isActive = false;
+				outputMsg = "end the_daemon";
 			break;
 
 			case TaskType::DEFAULT:
@@ -142,7 +147,7 @@ int main(int argc, char* argv[])
 		fout << "id: " << id << std::endl;
 
 		// trimite mesaj catre da
-		strcpy(shared_buffer_output, "Am primit ceva!\n");
+		strcpy(shared_buffer_output, outputMsg.c_str());
 
 		sem_post(sem_2); // daemonul spune ca a terminat de procesat stringul din shared memory
 	}
@@ -245,7 +250,7 @@ void init_shm_semaphore()
 		sem_unlink(semaphore_1_name);
 		exit(errno);
 	}
-	
+
 	strcpy(shared_buffer_output, "");
 }
 

@@ -1,14 +1,19 @@
 #pragma once
 
 #include <iostream>
+#include <fstream>
 
 #include <vector>
 #include <string>
 #include <map>
 #include <stdlib.h>
 #include <dirent.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <pthread.h>
+
+// TODO: DEBUG
+std::ofstream outJobs("jobs.output");
 
 //putem sa mutam implementarile ulterior intr-un cpp
 
@@ -51,8 +56,45 @@ struct Job
 std::map<int, Job> jobs;
 std::map<std::string, int> pathToId; //folosim asta ca sa aflam daca path-ul e deja in lucru de un job deja existent
 
-void addJob(const std::string& path, int priority = 1)
+std::string getPriority(int priority)
 {
+	if (priority == 1)
+	{
+		return "low";
+	}
+
+	if (priority == 2)
+	{
+		return "normal";
+	}
+
+	if (priority == 3)
+	{
+		return "high";
+	}
+
+	return "ERROR";
+}
+
+std::string addJob(const std::string& path, int priority = 1)
+{
+	// TODO: DEBUG
+	outJobs << "\n\naddJobs()" << std::endl;
+	outJobs << "path: " << path << std::endl;
+	outJobs << "priority: " << priority << std::endl;
+	
+	// verifica daca exista path-ul in sistem
+	{
+		DIR *dir = opendir(path.c_str());
+
+		if (dir == nullptr)
+		{
+			return "Directory '" + path + "' not found";
+		}
+
+		closedir(dir);
+	}
+
 	if (pathToId.find(path) == pathToId.end()) // nu exista jobul
 	{
 		++newId;
@@ -63,18 +105,21 @@ void addJob(const std::string& path, int priority = 1)
 		
 		if (pthread_mutex_init(&(jobs[pathToId[path]].m), NULL))
 		{
-			printf("Error: In addJob pthread_mutex_init failed\n");
+			outJobs << "Error: In addJob pthread_mutex_init failed\n";
 			perror(NULL);
-			return;
+			return "ERROR";
 		}
+
+		/* TODO: Error getting file status: No such file or directory
 		if (pthread_create(&(jobs[pathToId[path]].thr), NULL, threadWork, &(jobs[pathToId[path]])))
 		{
-			printf("Error: In addJob pthread_create failed\n");
+			outJobs << "Error: In addJob pthread_create failed\n";
 			perror(NULL);
-			return;
+			return "ERROR";
 		}
+		*/
 		
-		printf("Job with id %d created\n", pathToId[path]);
+		return "Created analysis task with ID '" + std::to_string(pathToId[path]) + "' for '" + path + "' and priority '" + getPriority(priority) + '\'';
 	}
 	else //exista jobul (in acest caz doar dau update la prioritate)
 	{
@@ -82,7 +127,7 @@ void addJob(const std::string& path, int priority = 1)
 		jobs[pathToId[path]].priority = priority;
 		pthread_mutex_unlock(&(jobs[pathToId[path]].m));
 		
-		printf("Job with id %d already existed. Only updated the priority\n", pathToId[path]);
+		return "Directory '" + path + "' is already included in the analysis with ID '" + std::to_string(pathToId[path]) + "'. Only updated the priority to '" + std::to_string(priority) + '\'';
 	}
 }
 
@@ -205,43 +250,43 @@ void processDirectory(const std::string& path, int& nrBytes, Job& job)
 	struct dirent *entry;
 	struct stat fileStat;
 
-    	while ((entry = readdir(dir)) != NULL)
-    	{
-        	char filePath[1024];
-        	//snprintf(filePath, sizeof(filePath), "%s/%s", path, entry->d_name);
+	while ((entry = readdir(dir)) != NULL)
+	{
+		char filePath[1024];
+		//snprintf(filePath, sizeof(filePath), "%s/%s", path, entry->d_name);
 
-        	if (stat(filePath, &fileStat) < 0)
-        	{
-            		perror("Error getting file status");
-            		continue;
-        	}
+		if (stat(filePath, &fileStat) < 0)
+		{
+			perror("Error getting file status");
+			continue;
+		}
 
 		//este fisier sau director?
-        	if (S_ISDIR(fileStat.st_mode))
-        	{
-            		// Ignora directoarele "." (curent) si ".." (parintele)
-            		if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
-            		{
-                		continue;
-            		}
+		if (S_ISDIR(fileStat.st_mode))
+		{
+			// Ignora directoarele "." (curent) si ".." (parintele)
+			if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+			{
+				continue;
+			}
 
-            		// Apelam recursiv
-            		processDirectory(filePath, nrBytes, job);
-        	}
-        	else //fisier
-        	{
-            		// Afisare fisier
-            		//printf("File: %s\n", filePath);
+			// Apelam recursiv
+			processDirectory(filePath, nrBytes, job);
+		}
+		else //fisier
+		{
+			// Afisare fisier
+			//printf("File: %s\n", filePath);
 
-            		// Adunam numarul de bytes
-            		
-            		pthread_mutex_lock(&job.m);
-            		nrBytes += fileStat.st_size;
-            		pthread_mutex_unlock(&job.m);
-        	}
-    	}
-    	
-    	closedir(dir);
+			// Adunam numarul de bytes
+			
+			pthread_mutex_lock(&job.m);
+			nrBytes += fileStat.st_size;
+			pthread_mutex_unlock(&job.m);
+		}
+	}
+	
+	closedir(dir);
 }
 
 void* threadWork(void* job) //functia rulata de fiecare thread in parte

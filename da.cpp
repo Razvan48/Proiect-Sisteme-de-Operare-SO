@@ -42,12 +42,17 @@ int main(int argc, char* argv[])
 	init_shm_buffer(); // obtin memoria partajata (si eventual pornesc daemonul)
 	init_shm_semaphore(); // obtin semaforul partajat
 
-	// input parser
+	// default values
 	TaskType taskType = TaskType::DEFAULT;
 	std::string dir;
 	int priority = 0;
 	int id = 0;
+
+	*option = static_cast<char>(taskType);
+	*intInput = 0;
+	strcpy(msg, dir.c_str());
 	
+	// input parser
 	parseInput(argc, argv, taskType, dir, priority, id);
 
 	// Inputul nu este corect => nu trimite nimic la the_daemon
@@ -99,11 +104,6 @@ int main(int argc, char* argv[])
 			*option = static_cast<char>(taskType);
 		break;
 	}
-
-	// TODO: delete
-	std::cout << "task: " << static_cast<char>(taskType) << '\n';
-	std::cout << "intInput: " << *intInput << '\n';
-	std::cout << "msg: " << dir << '\n';
 
 	sem_post(sem_1);
 
