@@ -305,13 +305,7 @@ void parseInput(int argc, char* argv[], TaskType& taskType, std::string& dir, in
 		id = inputID;
 
 		/*
-			TODO: de pus in the_daemon.cpp
-			- verifica daca exista ID-ul printre task-urile noastra => ID 100 not found
-			- daca totul merge => Path Usage Size Amount
-		*/
-
-		/*
-			TODO: trimite la the_daemon.cpp
+			trimite la the_daemon.cpp
 			1. -p   -> TaskType
 			2. id   -> int
 		*/
@@ -331,7 +325,7 @@ void parseInput(int argc, char* argv[], TaskType& taskType, std::string& dir, in
         taskType = TaskType::TERMINATE;
 
 		/*
-			TODO: trimite la the_daemon.cpp
+			trimite la the_daemon.cpp
 			1. -k   -> TaskType
 		*/
 		return;

@@ -425,3 +425,9 @@ std::string infoJob(int id)
 	return "Info... for task with ID '" + std::to_string(id) + '\'';
 }
 
+/*
+	TODO: functie pentru TaskType::PRINT
+	- verifica daca exista ID-ul printre task-urile noastra => ID 100 not found
+	- daca totul merge
+*/
+
