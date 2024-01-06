@@ -49,6 +49,7 @@ void init_shm_semaphore();
 
 int main(int argc, char* argv[])
 {
+	// TODO: DEBUG
 	fout << "apelare the_daemon -> main()" << std::endl;
 
 	init_shm_buffer(); // creez memoria partajata o singura data la pornirea daemonului
@@ -78,6 +79,7 @@ int main(int argc, char* argv[])
 		return 0;
 	}
 
+	// TODO: DEBUG
 	fout << "the_daemon -> while() loop" << std::endl;
 
 	while(isActive)
@@ -85,7 +87,7 @@ int main(int argc, char* argv[])
 		sem_wait(sem_1); // semaforul a fost creat cu valoarea zero, deci astept sa il incrementeze "da" (<=> astept
 						// sa fie rulat ./da -option .... si sa imi trimita o comanda)	
 
-		// TODO: delete
+		// TODO: DEBUG
 		fout << "\n\nNew input" << std::endl;
 
 		TaskType taskType = getTask(*option);
@@ -117,7 +119,7 @@ int main(int argc, char* argv[])
 			break;
 			
 			case TaskType::LIST:
-				// TODO: delete
+				// TODO: job
 			break;
 			
 			case TaskType::PRINT:
@@ -133,30 +135,14 @@ int main(int argc, char* argv[])
 			break;
 		}
 
-		// TODO: delete
+		// TODO: DEBUG
 		fout << "task: " << static_cast<char>(taskType) << std::endl;
 		fout << "dir: " << dir << std::endl;
 		fout << "priority: " << priority << std::endl;
 		fout << "id: " << id << std::endl;
 
+		// trimite mesaj catre da
 		strcpy(shared_buffer_output, "Am primit ceva!\n");
-
-		// TODO: delete
-		// if(*option == KILL)
-		// {
-		// 	isActive = false;
-		// 	continue; // 
-		// }
-
-		/*jobs();    // "munca" efectiva a daemonului
-		if(*option == PRINT)
-		{
-
-			strcpy(shared_buffer_output, "");
-			for(auto i: s)
-				{strcat(shared_buffer_output, i.c_str());
-				strcat(shared_buffer_output, "\n");}
-		}*/
 
 		sem_post(sem_2); // daemonul spune ca a terminat de procesat stringul din shared memory
 	}
@@ -173,16 +159,10 @@ int main(int argc, char* argv[])
 	sem_unlink(semaphore_1_name);
 	shm_unlink(shm_input_name);
 
-	// TODO: delete -> e responsabilitatea sa le stearga da dupa ce termina cu ele
-	// shm_unlink(shm_output_name);
-	// sem_unlink(semaphore_2_name);
-
 	fout << std::endl << std::endl << "the_daemon a terminat executia" << std::endl;
 
 	return 0;
 }
-
-
 
 void init_shm_buffer()
 {
@@ -193,6 +173,7 @@ void init_shm_buffer()
 		perror(NULL);
 		exit(errno);
 	}
+
 	shm_size_input = getpagesize();
 	if(ftruncate(shm_input_fd, shm_size_input) == -1)
 	{
@@ -209,22 +190,21 @@ void init_shm_buffer()
 		exit(errno);
 	}
 
-	option = shared_buffer_input; // optiunea 
-	intInput = (int*)(shared_buffer_input + sizeof(char)); // prioritatea
-	msg = shared_buffer_input + sizeof(char) + sizeof(int); // mesajul (calea) restul
+	option = shared_buffer_input; 
+	intInput = (int*)(shared_buffer_input + sizeof(char));
+	msg = shared_buffer_input + sizeof(char) + sizeof(int);
 
 	*option = '\0';
 	*intInput = 0;
 	strcpy(msg, "");
 
-	
 	// output buffer
 	shm_output_fd = shm_open(shm_output_name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR); 
 	if(shm_output_fd < 0)
 	{
 		perror(NULL);
+		munmap(shared_buffer_input, shm_size_input);
 		shm_unlink(shm_input_name);
-		munmap(shared_buffer_output, shm_size_input);
 		exit(errno);
 	}
 	
@@ -232,9 +212,9 @@ void init_shm_buffer()
 	if(ftruncate(shm_output_fd, shm_size_output) == -1)
 	{
 		perror(NULL);
+		munmap(shared_buffer_input, shm_size_input);
 		shm_unlink(shm_input_name);
 		shm_unlink(shm_output_name);
-		munmap(shared_buffer_output, shm_size_input);
 		exit(errno);
 	}
 
@@ -242,9 +222,9 @@ void init_shm_buffer()
 	if(shared_buffer_output == MAP_FAILED)
 	{
 		perror(NULL);
+		munmap(shared_buffer_input, shm_size_input);
 		shm_unlink(shm_input_name);
 		shm_unlink(shm_output_name);
-		munmap(shared_buffer_output, shm_size_input);
 		exit(errno);
 	}
 }
@@ -265,6 +245,7 @@ void init_shm_semaphore()
 		sem_unlink(semaphore_1_name);
 		exit(errno);
 	}
+	
 	strcpy(shared_buffer_output, "");
 }
 

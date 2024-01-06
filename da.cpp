@@ -16,13 +16,6 @@
 #include "communication.hpp"
 #include "inputParser.hpp"
 
-
-// TODO: DELETE
-// #define KILL 'k'
-// #define ADD_MSG 'a'
-// #define PRINT 'p'
-
-
 	char shm_input_name[] = "/shared_buffer_input";
 	char shm_output_name[] = "/shared_buffer_output";
 	char semaphore_1_name[] = "/shared_semaphore_1";
@@ -116,7 +109,8 @@ int main(int argc, char* argv[])
 
 	sem_wait(sem_2);
 
-	printf("the_daemon: %s\n", shared_buffer_output); // afisez din memoria partajata
+	// raspunsul de la the_daemon
+	printf("the_daemon: %s\n", shared_buffer_output);
 
 	// este datoria lui da sa incrementeze sem_2 pentru a putea efectua alta comanda da
 	sem_post(sem_2);
@@ -139,51 +133,7 @@ int main(int argc, char* argv[])
 	}
 
 	return 0;
-
-	/*
-	char opt = '\0';
-
-	if(strcmp(argv[1], "-k") == 0) 
-		opt = KILL;
-	else
-		if(strcmp(argv[1], "-a") == 0)
-			opt = ADD_MSG;
-		else
-			if(strcmp(argv[1], "-p") == 0)
-				opt = PRINT;
-			else
-			{
-				printf("continutul help-ului.......\n");
-				return -1;
-			} // setez optiunea (primul octet din memoria partajata)
-	
-	sem_wait(sem_2); // astept sa termine daemonul de lucrat cu memoria partajata
-	*option = opt;
-
-	if(*option == PRINT)
-	{
-		sem_post(sem_1);
-		sem_wait(sem_2);
-		printf("da: %s\n", shared_buffer_output); // afisez din memoria partajata	
-	}
-	else
-	{
-		if(*option == ADD_MSG)
-		strcpy(msg, argv[2]); // scriu mesajul (calea) in memoria partajata
-
-	sem_post(sem_1); // daemonul era blocat in sem_wait(sem) (semaforul e zero) pana termin de scris in memoria partajata;
-					// il eliberez si imi termin executia
-	}
-
-	sem_close(sem_1);
-	sem_close(sem_2);
-	munmap(shared_buffer_input, shm_size_input);
-	munmap(shared_buffer_output, shm_size_output);
-	*/
-
-	return 0;
 }
-
 
 void init_shm_buffer()
 {
@@ -201,13 +151,16 @@ void init_shm_buffer()
 			execve("./the_daemon", argv_c, NULL); // rulez executabilul "the daemon"
 			perror("nu a pornit daemonul");
 		}
-		wait(NULL); // astapt sa se termine initializarea daemonului
-	// procesul parinte ("da") este radacina unei arborescente de forma: "da" -> "init_daemon" -> "daemon"
-	// "init_daemon" initializeaza obiectele de memorie partajata si moare => "daemon" pierde contactul cu terminalul;
-	// "da" stie ca initializarea s-a terminat si ca poate sa acceseze memoria partajata
+		
+		// astept sa se termine initializarea daemonului
+		// procesul parinte ("da") este radacina unei arborescente de forma: "da" -> "init_daemon" -> "daemon"
+		// "init_daemon" initializeaza obiectele de memorie partajata si moare => "daemon" pierde contactul cu terminalul;
+		// "da" stie ca initializarea s-a terminat si ca poate sa acceseze memoria partajata
+		wait(NULL); 
 
 		shm_input_fd = shm_open(shm_input_name, O_RDWR, S_IRUSR|S_IWUSR);
 	}
+
 	if(shm_input_fd < 0)
 	{
 		perror(NULL);
@@ -223,18 +176,17 @@ void init_shm_buffer()
 		exit(errno);
 	} // s-a mapat memoria partajata (un sir de caractere de 4096)
 
-	option = shared_buffer_input; // optiune
-	intInput = (int*)(shared_buffer_input + sizeof(char)); // prioritate, daca este cazul
-	msg = shared_buffer_input + sizeof(char) + sizeof(int); // de aici incepe mesajul efectiv (calea catre directorul de analizat)
-
+	option = shared_buffer_input;
+	intInput = (int*)(shared_buffer_input + sizeof(char));
+	msg = shared_buffer_input + sizeof(char) + sizeof(int);
 
 	// output buffer
 	shm_output_fd = shm_open(shm_output_name, O_RDWR, S_IRUSR|S_IWUSR); 
 	if(shm_output_fd < 0)
 	{
 		perror(NULL);
-		shm_unlink(shm_input_name); // daca am eroare abia aici, inseamna ca obiectele pentru input s-au creat, deci le sterg
 		munmap(shared_buffer_input, shm_size_input);
+		shm_unlink(shm_input_name); // daca am eroare abia aici, inseamna ca obiectele pentru input s-au creat, deci le sterg
 		exit(errno);
 	}
 
@@ -243,9 +195,9 @@ void init_shm_buffer()
 	if(shared_buffer_output == MAP_FAILED)
 	{
 		perror("map failed");
+		munmap(shared_buffer_input, shm_size_input);
 		shm_unlink(shm_input_name);
 		shm_unlink(shm_output_name);
-		munmap(shared_buffer_input, shm_size_input);
 		exit(errno);
 	}
 }
