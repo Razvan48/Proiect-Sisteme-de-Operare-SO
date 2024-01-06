@@ -47,8 +47,6 @@ void init_shm_buffer();
 
 void init_shm_semaphore();
 
-// void jobs();
-
 int main(int argc, char* argv[])
 {
 	fout << "apelare the_daemon -> main()" << std::endl;
@@ -269,21 +267,4 @@ void init_shm_semaphore()
 	}
 	strcpy(shared_buffer_output, "");
 }
-
-/* am comentat asta pentru ca avem std::map de jobs
-void jobs()
-{
-	if(*option == ADD_MSG)
-		{
-			auto time_stamp = std::chrono::system_clock::now();
-			std::time_t current_time_epoch = std::chrono::system_clock::to_time_t(time_stamp);
-			char the_time[200] = "";
-			sprintf(the_time, " - timestamp  %s", std::ctime(&current_time_epoch));
-			std::string mesaj;
-			mesaj.insert(mesaj.size(), msg);
-			mesaj.insert(mesaj.size(), the_time);
-			s.insert(mesaj);
-		}
-}
-*/
 
