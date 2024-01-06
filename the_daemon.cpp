@@ -120,6 +120,8 @@ int main(int argc, char* argv[])
 			
 			case TaskType::REMOVE:
 				id = *intInput;
+
+				outputMsg = deleteJob(id);
 			break;
 			
 			case TaskType::INFO:

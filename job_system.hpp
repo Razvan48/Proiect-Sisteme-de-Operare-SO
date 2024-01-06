@@ -175,6 +175,7 @@ std::string unPauseJob(int id) // seteaza flag-ul de status la un job ca Running
 	return "Resumed task with ID '" + std::to_string(id) + '\'';
 }
 
+// TODO: de facut un task pt asta
 void changePriority(int id, int priority) //reseteaza priority-ul unui job
 {
 	//verificam daca exista id-ul respectiv
@@ -189,29 +190,34 @@ void changePriority(int id, int priority) //reseteaza priority-ul unui job
 	pthread_mutex_unlock(&(jobs.find(id)->second.m));
 }
 
-void deleteJob(int id) //sterge job-ul cu id-ul dat
+std::string deleteJob(int id) //sterge job-ul cu id-ul dat
 {
 	//verificam daca exista id-ul respectiv
 	if (jobs.find(id) == jobs.end())
 	{
-		printf("Error: deleteJob(%d): Invalid job id\n", id);
-		return;
+		return "ID '" + std::to_string(id) + "' not found";
 	}
 	
+	/* TODO: EROARE: Error: In deleteJob(1) pthread_join failed -> No such file or directory 
 	pthread_mutex_lock(&(jobs.find(id)->second.m));
 	std::string pathJob = jobs.find(id)->second.path;
 	pthread_mutex_unlock(&(jobs.find(id)->second.m));
 	stopJob(id);
+
 	if (pthread_join(jobs.find(id)->second.thr, NULL))
 	{
 		printf("Error: In deleteJob(%d) pthread_join failed\n", id);
 		perror(NULL);
-		return;
+		return "ERROR";
 	}
+
 	pthread_mutex_destroy(&(jobs.find(id)->second.m));
 	
 	pathToId.erase(pathJob);
 	jobs.erase(id);
+	*/
+
+	return "Removed task with ID '" + std::to_string(id) + '\'';
 }
 
 void processDirectory(const std::string& path, int& nrBytes, Job& job)
@@ -385,9 +391,4 @@ void displayJobs() //afiseaza job-urile active
 		pthread_mutex_unlock(&(it.second).m);
 	}
 }
-
-
-
-
-
 
