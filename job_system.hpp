@@ -378,8 +378,19 @@ void* threadWork(void* job) //functia rulata de fiecare thread in parte
 	return NULL; //
 }
 
-void displayJobs() //afiseaza job-urile active
+std::string displayJobs() //afiseaza job-urile active
 {
+	std::string msg = 
+	" ID  PRI   Path                  Done Status              Details\n";
+//	" 12  ***   /home/user/...        45% in progress          2306 files, 11 dir"
+
+	/* TODO: pune tot in msg:
+		- ID
+		- PRI 			-> * / ** / ***
+		- Path 			-> /home/user/...
+		- Done Status 	-> 45% in progress
+		- Details 		-> 2306 files, 11 dirs
+
 	for (auto& it : jobs)
 	{
 		pthread_mutex_lock(&(it.second).m);
@@ -390,6 +401,9 @@ void displayJobs() //afiseaza job-urile active
 			printf("Done: %lf\n", 0.0);
 		pthread_mutex_unlock(&(it.second).m);
 	}
+	*/
+
+	return msg;
 }
 
 std::string infoJob(int id)

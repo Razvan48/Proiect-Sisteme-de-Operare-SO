@@ -131,7 +131,7 @@ int main(int argc, char* argv[])
 			break;
 			
 			case TaskType::LIST:
-				// TODO: job
+				outputMsg = displayJobs();
 			break;
 			
 			case TaskType::PRINT:

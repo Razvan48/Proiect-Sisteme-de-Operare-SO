@@ -270,7 +270,7 @@ void parseInput(int argc, char* argv[], TaskType& taskType, std::string& dir, in
         taskType = TaskType::LIST;
 
 		/*
-			TODO: trimite la the_daemon.cpp
+			trimite la the_daemon.cpp
 			1. -l   -> TaskType
 		*/
 		return;
