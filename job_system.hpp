@@ -408,12 +408,6 @@ std::string displayJobs() //afiseaza job-urile active
 
 std::string infoJob(int id)
 {
-	/*
-		TODO: de pus in the_daemon.cpp
-		- verifica daca exista ID-ul printre task-urile noastra => ID 100 not found
-		- daca totul merge => Removed task with ID ’2’ for ’/home/user/my_repo’ and priority ’high’
-	*/
-
 	// verificam daca exista id-ul respectiv
 	if (jobs.find(id) == jobs.end())
 	{
