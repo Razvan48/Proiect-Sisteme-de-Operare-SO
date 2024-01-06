@@ -160,18 +160,19 @@ std::string pauseJob(int id) // seteaza flag-ul de status la un job ca Paused (t
 	return "Suspended task with ID '" + std::to_string(id) + '\'';
 }
 
-void unPauseJob(int id) // seteaza flag-ul de status la un job ca Running
+std::string unPauseJob(int id) // seteaza flag-ul de status la un job ca Running
 {
 	//verificam daca exista id-ul respectiv
 	if (jobs.find(id) == jobs.end())
 	{
-		printf("Error: unPauseJob(%d): Invalid job id\n", id);
-		return;
+		return "ID '" + std::to_string(id) + "' not found";
 	}
 	
 	pthread_mutex_lock(&(jobs.find(id)->second.m));
 	jobs.find(id)->second.status = JobStatus::Running;
 	pthread_mutex_unlock(&(jobs.find(id)->second.m));
+
+	return "Resumed task with ID '" + std::to_string(id) + '\'';
 }
 
 void changePriority(int id, int priority) //reseteaza priority-ul unui job

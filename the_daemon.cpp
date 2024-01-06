@@ -114,6 +114,8 @@ int main(int argc, char* argv[])
 			
 			case TaskType::RESUME:
 				id = *intInput;
+
+				outputMsg = unPauseJob(id);
 			break;
 			
 			case TaskType::REMOVE:
