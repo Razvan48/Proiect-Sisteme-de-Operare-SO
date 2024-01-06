@@ -30,12 +30,13 @@ Utilitarul la linia de comanda se va numi "da" si trebuie sa expuna urmatoarele 
 ```
    Usage: da [OPTION]... [DIR]...
    Analyze the space occupied by the directory at [DIR]
-      -a, --add           analyze a new directory path for disk usage
-      -p, --priority   set priority for the new analysis (works only with -a argument)
-      -S, --suspend <id>  suspend task with <id>
-      -R, --resume <id>  resume task with <id>
-      -r, --remove <id>  remove the analysis with the given <id>
-      -i, --info <id>  print status about the analysis with <id> (pending, progress, d
-      -l, --list   list all analysis tasks, with their ID and the corresponding root p
-      -p, --print <id>  print analysis report for those tasks that are "done"
+      -a, --add                analyze a new directory path for disk usage
+      -p, --priority <1/2/3>   set priority for the new analysis (works only with -a argument)
+      -S, --suspend <id>       suspend task with <id>
+      -R, --resume <id>        resume task with <id>
+      -r, --remove <id>        remove the analysis with the given <id>
+      -i, --info <id>          print status about the analysis with <id> (pending, progress, d
+      -l, --list               list all analysis tasks, with their ID and the corresponding root p
+      -p, --print <id>         print analysis report for those tasks that are "done"
+      -t, --terminate          terminates daemon
 ```
