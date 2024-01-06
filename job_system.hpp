@@ -162,7 +162,7 @@ std::string pauseJob(int id) // seteaza flag-ul de status la un job ca Paused (t
 
 std::string unPauseJob(int id) // seteaza flag-ul de status la un job ca Running
 {
-	//verificam daca exista id-ul respectiv
+	// verificam daca exista id-ul respectiv
 	if (jobs.find(id) == jobs.end())
 	{
 		return "ID '" + std::to_string(id) + "' not found";
@@ -192,7 +192,7 @@ void changePriority(int id, int priority) //reseteaza priority-ul unui job
 
 std::string deleteJob(int id) //sterge job-ul cu id-ul dat
 {
-	//verificam daca exista id-ul respectiv
+	// verificam daca exista id-ul respectiv
 	if (jobs.find(id) == jobs.end())
 	{
 		return "ID '" + std::to_string(id) + "' not found";
@@ -390,5 +390,24 @@ void displayJobs() //afiseaza job-urile active
 			printf("Done: %lf\n", 0.0);
 		pthread_mutex_unlock(&(it.second).m);
 	}
+}
+
+std::string infoJob(int id)
+{
+	/*
+		TODO: de pus in the_daemon.cpp
+		- verifica daca exista ID-ul printre task-urile noastra => ID 100 not found
+		- daca totul merge => Removed task with ID ’2’ for ’/home/user/my_repo’ and priority ’high’
+	*/
+
+	// verificam daca exista id-ul respectiv
+	if (jobs.find(id) == jobs.end())
+	{
+		return "ID '" + std::to_string(id) + "' not found";
+	}
+
+	// TODO
+
+	return "Info... for task with ID '" + std::to_string(id) + '\'';
 }
 

@@ -250,13 +250,7 @@ void parseInput(int argc, char* argv[], TaskType& taskType, std::string& dir, in
 		id = inputID;
 
 		/*
-			TODO: de pus in the_daemon.cpp
-			- verifica daca exista ID-ul printre task-urile noastra => ID 100 not found
-			- daca totul merge => Removed task with ID ’2’ for ’/home/user/my_repo’ and priority ’high’
-		*/
-
-		/*
-			TODO: trimite la the_daemon.cpp
+			trimite la the_daemon.cpp
 			1. -i   -> TaskType
 			2. id   -> int
 		*/

@@ -126,6 +126,8 @@ int main(int argc, char* argv[])
 			
 			case TaskType::INFO:
 				id = *intInput;
+
+				outputMsg = infoJob(id);
 			break;
 			
 			case TaskType::LIST:
