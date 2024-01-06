@@ -38,5 +38,5 @@ Utilitarul la linia de comanda se va numi "da" si trebuie sa expuna urmatoarele 
       -i, --info <id>          print status about the analysis with <id> (pending, progress, d
       -l, --list               list all analysis tasks, with their ID and the corresponding root p
       -p, --print <id>         print analysis report for those tasks that are "done"
-      -t, --terminate          terminates daemon
+      -t, --terminate          terminates the daemon
 ```
