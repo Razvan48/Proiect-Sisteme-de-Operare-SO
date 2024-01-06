@@ -43,11 +43,13 @@ struct Job
 	JobStatus status;
 	int nrBytesCrt;
 	int nrBytesTotal; //calculam procentul de finalizare ca 1.0 * nrBytesCrt / nrBytesTotal
+	int nrFiles;
+	int nrDir;
 	
 	Job() = default;
 	
 	Job(const std::string& path, int priority, JobStatus status):
-		path(path), priority(priority), status(status), nrBytesCrt(0), nrBytesTotal(0)
+		path(path), priority(priority), status(status), nrBytesCrt(0), nrBytesTotal(0), nrFiles(0), nrDir(0)
 	{
 	
 	}
@@ -110,14 +112,13 @@ std::string addJob(const std::string& path, int priority = 1)
 			return "ERROR";
 		}
 
-		/* TODO: Error getting file status: No such file or directory
+		/* TODO: Error getting file status: No such file or directory */
 		if (pthread_create(&(jobs[pathToId[path]].thr), NULL, threadWork, &(jobs[pathToId[path]])))
 		{
 			outJobs << "Error: In addJob pthread_create failed\n";
 			perror(NULL);
 			return "ERROR";
 		}
-		*/
 		
 		return "Created analysis task with ID '" + std::to_string(pathToId[path]) + "' for '" + path + "' and priority '" + getPriority(priority) + '\'';
 	}
@@ -129,6 +130,8 @@ std::string addJob(const std::string& path, int priority = 1)
 		
 		return "Directory '" + path + "' is already included in the analysis with ID '" + std::to_string(pathToId[path]) + "'. Only updated the priority to '" + std::to_string(priority) + '\'';
 	}
+	
+	printf("ok");
 }
 
 void stopJob(int id) //seteaza flag-ul de status la un job ca Ending (thread-ul va incerca apoi sa se incheie cand acest lucru e safe)
@@ -198,7 +201,7 @@ std::string deleteJob(int id) //sterge job-ul cu id-ul dat
 		return "ID '" + std::to_string(id) + "' not found";
 	}
 	
-	/* TODO: EROARE: Error: In deleteJob(1) pthread_join failed -> No such file or directory 
+	/* TODO: EROARE: Error: In deleteJob(1) pthread_join failed -> No such file or directory */
 	pthread_mutex_lock(&(jobs.find(id)->second.m));
 	std::string pathJob = jobs.find(id)->second.path;
 	pthread_mutex_unlock(&(jobs.find(id)->second.m));
@@ -215,12 +218,11 @@ std::string deleteJob(int id) //sterge job-ul cu id-ul dat
 	
 	pathToId.erase(pathJob);
 	jobs.erase(id);
-	*/
 
 	return "Removed task with ID '" + std::to_string(id) + '\'';
 }
 
-void processDirectory(const std::string& path, int& nrBytes, Job& job)
+void processDirectory(const std::string& path, int& nrBytes, Job& job, int indexOfScan)
 {
 	//cod de verificat status thread
 	//Paused
@@ -261,7 +263,7 @@ void processDirectory(const std::string& path, int& nrBytes, Job& job)
 	while ((entry = readdir(dir)) != NULL)
 	{
 		char filePath[1024];
-		//snprintf(filePath, sizeof(filePath), "%s/%s", path, entry->d_name);
+		snprintf(filePath, sizeof(filePath), "%s/%s", path.c_str(), entry->d_name);
 
 		if (stat(filePath, &fileStat) < 0)
 		{
@@ -279,7 +281,14 @@ void processDirectory(const std::string& path, int& nrBytes, Job& job)
 			}
 
 			// Apelam recursiv
-			processDirectory(filePath, nrBytes, job);
+			processDirectory(filePath, nrBytes, job, indexOfScan);
+			
+			if (indexOfScan == 1) // a doua parcurgere
+			{
+				pthread_mutex_lock(&job.m);
+				++job.nrDir;
+				pthread_mutex_unlock(&job.m);
+			}
 		}
 		else //fisier
 		{
@@ -290,6 +299,8 @@ void processDirectory(const std::string& path, int& nrBytes, Job& job)
 			
 			pthread_mutex_lock(&job.m);
 			nrBytes += fileStat.st_size;
+			if (indexOfScan == 1) // a doua parcurgere
+				++job.nrFiles;
 			pthread_mutex_unlock(&job.m);
 		}
 	}
@@ -330,7 +341,7 @@ void* threadWork(void* job) //functia rulata de fiecare thread in parte
 	std::string path = ((Job*)job)->path;
 	pthread_mutex_unlock(&(((Job*)job)->m));
 	
-	processDirectory(path, ((Job*)job)->nrBytesTotal,*((Job*)job)); //mai intai vedem cati bytes sunt in total, apoi mai parcurgem inca o data
+	processDirectory(path, ((Job*)job)->nrBytesTotal,*((Job*)job), 0); //mai intai vedem cati bytes sunt in total, apoi mai parcurgem inca o data
 	//facem 2 parcurgeri in loc de una doar ca sa putem afisa o evolutie liniara procentului de finalizare atunci cand il cere userul
 	
 	
@@ -361,7 +372,7 @@ void* threadWork(void* job) //functia rulata de fiecare thread in parte
 	//cod propriu-zis
 	
 	
-	processDirectory(path, ((Job*)job)->nrBytesCrt, (*((Job*)job)));
+	processDirectory(path, ((Job*)job)->nrBytesCrt, (*((Job*)job)), 1);
 	
 	//un thread se incheie doar daca utilizatorul a cerut explicit asta (altfel sta degeaba intr-un while)
 	pthread_mutex_lock(&(((Job*)job)->m));
@@ -390,18 +401,29 @@ std::string displayJobs() //afiseaza job-urile active
 		- Path 			-> /home/user/...
 		- Done Status 	-> 45% in progress
 		- Details 		-> 2306 files, 11 dirs
+	*/
 
 	for (auto& it : jobs)
 	{
 		pthread_mutex_lock(&(it.second).m);
-		printf("Id: %d Path: %s Number of bytes processed %d ", it.first, (it.second).path, (it.second).nrBytesCrt);
-		if ((it.second).nrBytesTotal > 0)
-			printf("Done: %lf\n", 1.0 * (it.second).nrBytesCrt / (it.second).nrBytesTotal);
+		msg += std::to_string(it.first) + " ";
+		for (int i = 0; i < it.second.priority; ++i)
+			msg += "*";
+		msg += " ";
+		msg += it.second.path + " ";
+		if (it.second.nrBytesTotal > 0)
+			msg += std::to_string((int)(100.0 * it.second.nrBytesCrt / it.second.nrBytesTotal));
 		else
-			printf("Done: %lf\n", 0.0);
+			msg += "0";
+		msg += "% in progress ";
+		
+		msg += std::to_string(it.second.nrFiles) + " files, ";
+		msg += std::to_string(it.second.nrDir) + " dir";
+		
+		msg += "\n";
+		
 		pthread_mutex_unlock(&(it.second).m);
 	}
-	*/
 
 	return msg;
 }
@@ -415,8 +437,33 @@ std::string infoJob(int id)
 	}
 
 	// TODO
+	
+	std::string msg = 
+	" ID  PRI   Path                  Done Status              Details\n";
+	
+	auto it = jobs.find(id);
+	
+	pthread_mutex_lock(&(it->second).m);
+	msg += std::to_string(it->first) + " ";
+	for (int i = 0; i < (it->second).priority; ++i)
+		msg += "*";
+	msg += " ";
+	msg += (it->second).path + " ";
+	if ((it->second).nrBytesTotal > 0)
+		msg += std::to_string((int)(100.0 * (it->second).nrBytesCrt / (it->second).nrBytesTotal));
+	else
+		msg += "0";
+	msg += "% in progress ";
+	
+	msg += std::to_string((it->second).nrFiles) + " files, ";
+	msg += std::to_string((it->second).nrDir) + " dir";
+	
+	msg += "\n";
+	
+	pthread_mutex_unlock(&(it->second).m);
 
-	return "Info... for task with ID '" + std::to_string(id) + '\'';
+	return msg;
+	//return "Info... for task with ID '" + std::to_string(id) + '\'';
 }
 
 /*
