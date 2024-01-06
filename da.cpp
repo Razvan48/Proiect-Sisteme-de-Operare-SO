@@ -15,11 +15,12 @@
 
 #include "communication.hpp"
 #include "inputParser.hpp"
-#include "job_system.hpp"	// TODO: de folosit
 
-#define KILL 'k'
-#define ADD_MSG 'a'
-#define PRINT 'p'
+
+// TODO: DELETE
+// #define KILL 'k'
+// #define ADD_MSG 'a'
+// #define PRINT 'p'
 
 
 	char shm_input_name[] = "/shared_buffer_input";
@@ -36,7 +37,7 @@
 	sem_t* sem_1 = NULL;
 	sem_t* sem_2 = NULL;
 	char* option = NULL;
-	char* priority = NULL;
+	int* intInput = NULL;
 	char* msg = NULL;
 
 void init_shm_buffer(); // initializare memorie partajata
@@ -45,54 +46,51 @@ void init_shm_semaphore(); // initializare semafor partajat
 
 int main(int argc, char* argv[])
 {
-	if (argc < 2)
-	{		
-		printf("continutul help-ului.......\n");
-		return -1;
-	}
-	if (strcmp(argv[1], "-a") == 0 && argc < 3)
-	{		
-		printf("continutul help-ului.......\n");
-		return -1;
-	}
-
 	init_shm_buffer(); // obtin memoria partajata (si eventual pornesc daemonul)
 	init_shm_semaphore(); // obtin semaforul partajat
 
-	/*	TODO: input parser
+	// input parser
 	TaskType taskType = TaskType::DEFAULT;
 	std::string dir;
-	int p;
-	int id;
+	int priority = 0;
+	int id = 0;
 	
-	parseInput(argc, argv, taskType, dir, p, id);
+	parseInput(argc, argv, taskType, dir, priority, id);
 
+	// Inputul nu este corect => nu trimite nimic la the_daemon
+	if (taskType == TaskType::DEFAULT)
+	{
+		return 0;
+	}
+	
+	sem_wait(sem_2); // astept sa termine daemonul de lucrat cu memoria partajata
+	
 	switch (taskType)
 	{
         case TaskType::ADD:
 			*option = static_cast<char>(taskType);
-			// TODO: *directory = dir
-			// TODO: *priority = p
+			*intInput = priority;
+			strcpy(msg, dir.c_str());
 		break;
         
 		case TaskType::SUSPEND:
 			*option = static_cast<char>(taskType);
-			// TODO: *taskId = id
+			*intInput = id;
 		break;
         
 		case TaskType::RESUME:
 			*option = static_cast<char>(taskType);
-			// TODO: *taskId = id
+			*intInput = id;
 		break;
         
 		case TaskType::REMOVE:
 			*option = static_cast<char>(taskType);
-			// TODO: *taskId = id
+			*intInput = id;
 		break;
         
 		case TaskType::INFO:
 			*option = static_cast<char>(taskType);
-			// TODO: *taskId = id
+			*intInput = id;
 		break;
         
 		case TaskType::LIST:
@@ -101,19 +99,48 @@ int main(int argc, char* argv[])
         
 		case TaskType::PRINT:
 			*option = static_cast<char>(taskType);
-			// TODO: *taskId = id
+			*intInput = id;
 		break;
         
 		case TaskType::TERMINATE:
 			*option = static_cast<char>(taskType);
 		break;
-
-        case TaskType::DEFAULT:
-			// Inputul nu este corect => nu trimite nimic la the_daemon
-		break;
 	}
-	*/
 
+	// TODO: delete
+	std::cout << "task: " << static_cast<char>(taskType) << '\n';
+	std::cout << "intInput: " << *intInput << '\n';
+	std::cout << "msg: " << dir << '\n';
+
+	sem_post(sem_1);
+
+	sem_wait(sem_2);
+
+	printf("the_daemon: %s\n", shared_buffer_output); // afisez din memoria partajata
+
+	// este datoria lui da sa incrementeze sem_2 pentru a putea efectua alta comanda da
+	sem_post(sem_2);
+
+	// am terminat 
+	sem_close(sem_1);
+	sem_close(sem_2);
+	
+	munmap(shared_buffer_input, shm_size_input);
+	munmap(shared_buffer_output, shm_size_output);
+
+	// daca trb sa inchidem the_daemon
+	if (taskType == TaskType::TERMINATE)
+	{
+		// da e responsabil sa stearga doar
+		// 1. sem_2 trebuie inchis 
+		// 2. shared_buffer_output
+		sem_unlink(semaphore_2_name);
+		shm_unlink(shm_output_name);
+	}
+
+	return 0;
+
+	/*
 	char opt = '\0';
 
 	if(strcmp(argv[1], "-k") == 0) 
@@ -152,6 +179,7 @@ int main(int argc, char* argv[])
 	sem_close(sem_2);
 	munmap(shared_buffer_input, shm_size_input);
 	munmap(shared_buffer_output, shm_size_output);
+	*/
 
 	return 0;
 }
@@ -194,10 +222,10 @@ void init_shm_buffer()
 		shm_unlink(shm_input_name);
 		exit(errno);
 	} // s-a mapat memoria partajata (un sir de caractere de 4096)
-	
+
 	option = shared_buffer_input; // optiune
-	priority = shared_buffer_input + sizeof(char); // prioritate, daca este cazul
-	msg = shared_buffer_input + 2*sizeof(char); // de aici incepe mesajul efectiv (calea catre directorul de analizat)
+	intInput = (int*)(shared_buffer_input + sizeof(char)); // prioritate, daca este cazul
+	msg = shared_buffer_input + sizeof(char) + sizeof(int); // de aici incepe mesajul efectiv (calea catre directorul de analizat)
 
 
 	// output buffer
@@ -238,3 +266,4 @@ void init_shm_semaphore()
 		exit(errno);
 	}
 }
+

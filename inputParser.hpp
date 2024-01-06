@@ -20,15 +20,18 @@ void parseInput(int argc, char* argv[], TaskType& taskType, std::string& dir, in
 		printf("da: missing operand\n");
 		printf("Try 'da -h, --help' for more information\n");
 
+		taskType = TaskType::DEFAULT;
 		return;
 	}
 
 	if (isOption(argv[1], "-h", "--help"))
 	{
+		taskType = TaskType::DEFAULT;
+
 		// comanda trebuie sa aiba fix 2 argumente
 		if (argc > 2)
 		{
-			printf("Error: Too many arguments provided. Please check your command and try again. Use 'da -h, --help' for help");
+			printf("Error: Too many arguments provided. Please check your command and try again. Use 'da -h, --help' for help\n");
 			return;
 		}
 
@@ -53,12 +56,14 @@ void parseInput(int argc, char* argv[], TaskType& taskType, std::string& dir, in
 		if (argc > 5)
 		{
 			printf("Error: Too many arguments provided. Please check your command and try again. Use 'da -h, --help' for help");
+			taskType = TaskType::DEFAULT;
 			return;
 		}
 
 		if (argc <= 2)
 		{
 			printf("Error: You need to provide a directory for analysis\n");
+			taskType = TaskType::DEFAULT;
 			return;
 		}
 
@@ -77,7 +82,8 @@ void parseInput(int argc, char* argv[], TaskType& taskType, std::string& dir, in
 
 					if (inputPriority != 1 && inputPriority != 2 && inputPriority != 3)
 					{
-						printf("Error: Please choose a number from the set {1, 2, 3} for priority.\n");
+						printf("Error: Choose a number <1,2,3> for priority\n");
+						taskType = TaskType::DEFAULT;
 						return;
 					}
 
@@ -86,12 +92,14 @@ void parseInput(int argc, char* argv[], TaskType& taskType, std::string& dir, in
 				else
 				{
 					printf("Error: Choose a number <1,2,3> for priority\n");
+					taskType = TaskType::DEFAULT;
 					return;
 				}
 			}
 			else
 			{
 				printf("Error: You can only use the '-p' option with the '-a' option. Please check your command and try again. Use 'da -h' for help\n");
+				taskType = TaskType::DEFAULT;
 				return;
 			}
 		}
@@ -117,24 +125,28 @@ void parseInput(int argc, char* argv[], TaskType& taskType, std::string& dir, in
 		// comanda trebuie sa aiba fix 3 argumente
 		if (argc > 3)
 		{
-			printf("Error: Too many arguments provided. Please check your command and try again. Use 'da -h, --help' for help");
+			printf("Error: Too many arguments provided. Please check your command and try again. Use 'da -h, --help' for help\n");
+			taskType = TaskType::DEFAULT;
 			return;
 		}
 
 		if (argc != 3)
 		{
 			printf("Error: Choose an ID\n");
+			taskType = TaskType::DEFAULT;
 			return;
 		}
 
-		int id = atoi(argv[2]);
-        if (id == 0)
+		int inputID = atoi(argv[2]);
+        if (inputID == 0)
         {
             printf("Error: ID must be a number > 0\n");
+			taskType = TaskType::DEFAULT;
             return;
         }
 
         taskType = TaskType::SUSPEND;
+		id = inputID;
 
 		/*
 			TODO: de pus in the_daemon.cpp
@@ -155,24 +167,28 @@ void parseInput(int argc, char* argv[], TaskType& taskType, std::string& dir, in
 		// comanda trebuie sa aiba fix 3 argumente
 		if (argc > 3)
 		{
-			printf("Error: Too many arguments provided. Please check your command and try again. Use 'da -h, --help' for help");
+			printf("Error: Too many arguments provided. Please check your command and try again. Use 'da -h, --help' for help\n");
+			taskType = TaskType::DEFAULT;
 			return;
 		}
 
 		if (argc != 3)
 		{
 			printf("Error: Choose an ID\n");
+			taskType = TaskType::DEFAULT;
 			return;
 		}
 
-		int id = atoi(argv[2]);
-        if (id == 0)
+		int inputID = atoi(argv[2]);
+        if (inputID == 0)
         {
             printf("Error: ID must be a number > 0\n");
+			taskType = TaskType::DEFAULT;
             return;
         }
 
         taskType = TaskType::RESUME;
+		id = inputID;
 
 		/*
 			TODO: de pus in the_daemon.cpp
@@ -193,24 +209,28 @@ void parseInput(int argc, char* argv[], TaskType& taskType, std::string& dir, in
 		// comanda trebuie sa aiba fix 3 argumente
 		if (argc > 3)
 		{
-			printf("Error: Too many arguments provided. Please check your command and try again. Use 'da -h, --help' for help");
+			printf("Error: Too many arguments provided. Please check your command and try again. Use 'da -h, --help' for help\n");
+			taskType = TaskType::DEFAULT;
 			return;
 		}
 
 		if (argc != 3)
 		{
 			printf("Error: Choose an ID\n");
+			taskType = TaskType::DEFAULT;
 			return;
 		}
 
-		int id = atoi(argv[2]);
-        if (id == 0)
+		int inputID = atoi(argv[2]);
+        if (inputID == 0)
         {
             printf("Error: ID must be a number > 0\n");
+			taskType = TaskType::DEFAULT;
             return;
         }
 
         taskType = TaskType::REMOVE;
+		id = inputID;
 
 		/*
 			TODO: de pus in the_daemon.cpp
@@ -231,24 +251,28 @@ void parseInput(int argc, char* argv[], TaskType& taskType, std::string& dir, in
 		// comanda trebuie sa aiba fix 3 argumente
 		if (argc > 3)
 		{
-			printf("Error: Too many arguments provided. Please check your command and try again. Use 'da -h, --help' for help");
+			printf("Error: Too many arguments provided. Please check your command and try again. Use 'da -h, --help' for help\n");
+			taskType = TaskType::DEFAULT;
 			return;
 		}
 
 		if (argc != 3)
 		{
 			printf("Error: Choose an ID\n");
+			taskType = TaskType::DEFAULT;
 			return;
 		}
 
-		int id = atoi(argv[2]);
-        if (id == 0)
+		int inputID = atoi(argv[2]);
+        if (inputID == 0)
         {
             printf("Error: ID must be a number > 0\n");
+			taskType = TaskType::DEFAULT;
             return;
         }
 
         taskType = TaskType::INFO;
+		id = inputID;
 
 		/*
 			TODO: de pus in the_daemon.cpp
@@ -270,6 +294,7 @@ void parseInput(int argc, char* argv[], TaskType& taskType, std::string& dir, in
 		if (argc > 2)
 		{
 			printf("Error: Too many arguments provided. Please check your command and try again. Use 'da -h, --help' for help");
+			taskType = TaskType::DEFAULT;
 			return;
 		}
 
@@ -287,24 +312,28 @@ void parseInput(int argc, char* argv[], TaskType& taskType, std::string& dir, in
 		// comanda trebuie sa aiba fix 3 argumente
 		if (argc > 3)
 		{
-			printf("Error: Too many arguments provided. Please check your command and try again. Use 'da -h, --help' for help");
+			printf("Error: Too many arguments provided. Please check your command and try again. Use 'da -h, --help' for help\n");
+			taskType = TaskType::DEFAULT;
 			return;
 		}
 
 		if (argc != 3)
 		{
 			printf("Error: Choose an ID\n");
+			taskType = TaskType::DEFAULT;
 			return;
 		}
 
-		int id = atoi(argv[2]);
-        if (id == 0)
+		int inputID = atoi(argv[2]);
+        if (inputID == 0)
         {
             printf("Error: ID must be a number > 0\n");
+			taskType = TaskType::DEFAULT;
             return;
         }
 
         taskType = TaskType::PRINT;
+		id = inputID;
 
 		/*
 			TODO: de pus in the_daemon.cpp
@@ -325,7 +354,8 @@ void parseInput(int argc, char* argv[], TaskType& taskType, std::string& dir, in
 		// comanda trebuie sa aiba fix 2 argumente
 		if (argc > 2)
 		{
-			printf("Error: Too many arguments provided. Please check your command and try again. Use 'da -h, --help' for help");
+			printf("Error: Too many arguments provided. Please check your command and try again. Use 'da -h, --help' for help\n");
+			taskType = TaskType::DEFAULT;
 			return;
 		}
 

@@ -12,4 +12,5 @@
 *.exe
 *.o
 *.obj
-
+*.vscode
+*.output

@@ -13,14 +13,13 @@
 #include <chrono>
 #include <time.h>
 
-#include "communication.hpp"	// TODO: de folosit
+#include "communication.hpp"
 #include "job_system.hpp"	// TODO: de folosit
 
-//in codul de mai jos am comentat tot ce implica jobs (avem std::map jobs in job_system.hpp)
+// TODO: DEBUG
+std::ofstream fout("the_daemon.output");
 
-#define KILL 'k'
-#define ADD_MSG 'a'
-#define PRINT 'p'
+//in codul de mai jos am comentat tot ce implica jobs (avem std::map jobs in job_system.hpp)
 
 
 	char shm_input_name[] = "/shared_buffer_input";
@@ -38,7 +37,7 @@
 	sem_t* sem_1 = NULL;
 	sem_t* sem_2 = NULL;
 	char* option = NULL;
-	char* priority = NULL;
+	int* intInput = NULL;
 	char* msg = NULL;
 
 	bool isActive = true;
@@ -52,6 +51,8 @@ void init_shm_semaphore();
 
 int main(int argc, char* argv[])
 {
+	fout << "apelare the_daemon -> main()" << std::endl;
+
 	init_shm_buffer(); // creez memoria partajata o singura data la pornirea daemonului
 	init_shm_semaphore(); // creez semaforul partajat o singura data la pornirea daemonului
 
@@ -79,16 +80,75 @@ int main(int argc, char* argv[])
 		return 0;
 	}
 
+	fout << "the_daemon -> while() loop" << std::endl;
+
 	while(isActive)
 	{
 		sem_wait(sem_1); // semaforul a fost creat cu valoarea zero, deci astept sa il incrementeze "da" (<=> astept
-						// sa fie rulat ./da -option .... si sa imi trimita o comanda)
+						// sa fie rulat ./da -option .... si sa imi trimita o comanda)	
 
-		if(*option == KILL)
+		// TODO: delete
+		fout << "\n\nNew input" << std::endl;
+
+		TaskType taskType = getTask(*option);
+		std::string dir;
+		int priority = 0;
+		int id = 0;
+
+		switch (taskType)
 		{
-			isActive = false;
-			continue; // 
+			case TaskType::ADD:
+				priority = *intInput;
+				dir = std::string(msg);
+			break;
+			
+			case TaskType::SUSPEND:
+				id = *intInput;
+			break;
+			
+			case TaskType::RESUME:
+				id = *intInput;
+			break;
+			
+			case TaskType::REMOVE:
+				id = *intInput;
+			break;
+			
+			case TaskType::INFO:
+				id = *intInput;
+			break;
+			
+			case TaskType::LIST:
+				// TODO: delete
+			break;
+			
+			case TaskType::PRINT:
+				id = *intInput;
+			break;
+			
+			case TaskType::TERMINATE:
+				isActive = false;
+			break;
+
+			case TaskType::DEFAULT:
+				// TODO: delete
+			break;
 		}
+
+		// TODO: delete
+		fout << "task: " << static_cast<char>(taskType) << std::endl;
+		fout << "dir: " << dir << std::endl;
+		fout << "priority: " << priority << std::endl;
+		fout << "id: " << id << std::endl;
+
+		strcpy(shared_buffer_output, "Am primit ceva!\n");
+
+		// TODO: delete
+		// if(*option == KILL)
+		// {
+		// 	isActive = false;
+		// 	continue; // 
+		// }
 
 		/*jobs();    // "munca" efectiva a daemonului
 		if(*option == PRINT)
@@ -98,25 +158,28 @@ int main(int argc, char* argv[])
 			for(auto i: s)
 				{strcat(shared_buffer_output, i.c_str());
 				strcat(shared_buffer_output, "\n");}
-		}
-
-		if(*option == PRINT)
-		{
-			sem_post(sem_2);
 		}*/
-		sem_post(sem_2); // daemonul spune ca a terminat de procesat stringul din shared memory
 
+		sem_post(sem_2); // daemonul spune ca a terminat de procesat stringul din shared memory
 	}
 
 	sem_close(sem_1);
 	sem_close(sem_2);
+
 	munmap(shared_buffer_input, shm_size_input);
 	munmap(shared_buffer_output, shm_size_output);
 
-	shm_unlink(shm_input_name);
-	shm_unlink(shm_output_name);
+	// the_daemon e responsabil sa stearga doar
+	// 1. sem_1
+	// 2. shared_buffer_input
 	sem_unlink(semaphore_1_name);
-	sem_unlink(semaphore_2_name);
+	shm_unlink(shm_input_name);
+
+	// TODO: delete -> e responsabilitatea sa le stearga da dupa ce termina cu ele
+	// shm_unlink(shm_output_name);
+	// sem_unlink(semaphore_2_name);
+
+	fout << std::endl << std::endl << "the_daemon a terminat executia" << std::endl;
 
 	return 0;
 }
@@ -140,7 +203,7 @@ void init_shm_buffer()
 		exit(errno);
 	}
 
-	shared_buffer_input = (char*) mmap(0, shm_size_input, PROT_READ | PROT_WRITE, MAP_SHARED, shm_input_fd, 0);
+	shared_buffer_input = (char*)mmap(0, shm_size_input, PROT_READ | PROT_WRITE, MAP_SHARED, shm_input_fd, 0);
 	if(shared_buffer_input == MAP_FAILED)
 	{
 		perror(NULL);
@@ -149,9 +212,11 @@ void init_shm_buffer()
 	}
 
 	option = shared_buffer_input; // optiunea 
-	priority = shared_buffer_input + sizeof(char); // prioritatea
-	msg = shared_buffer_input + 2*sizeof(char); // mesajul (calea) restul
+	intInput = (int*)(shared_buffer_input + sizeof(char)); // prioritatea
+	msg = shared_buffer_input + sizeof(char) + sizeof(int); // mesajul (calea) restul
+
 	*option = '\0';
+	*intInput = 0;
 	strcpy(msg, "");
 
 	
@@ -161,7 +226,7 @@ void init_shm_buffer()
 	{
 		perror(NULL);
 		shm_unlink(shm_input_name);
-		munmap(shared_buffer_input, shm_size_input);
+		munmap(shared_buffer_output, shm_size_input);
 		exit(errno);
 	}
 	
@@ -171,7 +236,7 @@ void init_shm_buffer()
 		perror(NULL);
 		shm_unlink(shm_input_name);
 		shm_unlink(shm_output_name);
-		munmap(shared_buffer_input, shm_size_input);
+		munmap(shared_buffer_output, shm_size_input);
 		exit(errno);
 	}
 
@@ -181,7 +246,7 @@ void init_shm_buffer()
 		perror(NULL);
 		shm_unlink(shm_input_name);
 		shm_unlink(shm_output_name);
-		munmap(shared_buffer_input, shm_size_input);
+		munmap(shared_buffer_output, shm_size_input);
 		exit(errno);
 	}
 }
@@ -221,3 +286,4 @@ void jobs()
 		}
 }
 */
+

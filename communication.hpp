@@ -9,7 +9,7 @@ enum class TaskType : char
     INFO        = 'i',
     LIST        = 'l',
     PRINT       = 'p',
-    TERMINATE   = 'k',      // TODO: ramane asa?
+    TERMINATE   = 't',
 
     DEFAULT     = '?'
 };
@@ -25,7 +25,7 @@ const TaskType getTask(const char& ch)
         case 'i':     return TaskType::INFO;      break;
         case 'l':     return TaskType::LIST;      break;
         case 'p':     return TaskType::PRINT;     break;
-        case 'k':     return TaskType::TERMINATE; break;
+        case 't':     return TaskType::TERMINATE; break;
 
         default:      return TaskType::DEFAULT;   break;
     }
