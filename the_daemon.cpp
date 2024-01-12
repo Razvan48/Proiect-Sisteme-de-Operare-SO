@@ -12,6 +12,7 @@
 #include <semaphore.h>
 #include <chrono>
 #include <time.h>
+#include <linux/limits.h>
 
 #include "communication.hpp"
 #include "job_system.hpp"	// TODO: de folosit
@@ -46,6 +47,10 @@ std::ofstream fout("the_daemon.output");
 void init_shm_buffer();
 
 void init_shm_semaphore();
+
+int closest_pagesize_multiple(int s);
+
+void put_message(const std::string& s);
 
 int main(int argc, char* argv[])
 {
@@ -158,7 +163,7 @@ int main(int argc, char* argv[])
 		fout << "id: " << id << std::endl;
 
 		// trimite mesaj catre da
-		strcpy(shared_buffer_output, outputMsg.c_str());
+		put_message(outputMsg);
 
 		sem_post(sem_2); // daemonul spune ca a terminat de procesat stringul din shared memory
 	}
@@ -190,7 +195,7 @@ void init_shm_buffer()
 		exit(errno);
 	}
 
-	shm_size_input = getpagesize();
+	shm_size_input = PATH_MAX;
 	if(ftruncate(shm_input_fd, shm_size_input) == -1)
 	{
 		perror(NULL);
@@ -264,4 +269,53 @@ void init_shm_semaphore()
 
 	strcpy(shared_buffer_output, "");
 }
+
+void put_message(const std::string& outputMsg)
+{
+	if(outputMsg.size() + sizeof(size_t) + 1 <= shm_size_output && shm_size_output <= getpagesize())
+	{
+		*((size_t*)shared_buffer_output) = shm_size_output;
+		strcpy(shared_buffer_output + sizeof(size_t), outputMsg.c_str());
+		return;
+	}
+
+	if(shared_buffer_output)
+		munmap(shared_buffer_output, shm_size_output);
+
+	shm_size_output = closest_pagesize_multiple(outputMsg.size() + sizeof(size_t) + 1);
+	
+	if(ftruncate(shm_output_fd, shm_size_output) == -1)
+	{
+		perror(NULL);
+		munmap(shared_buffer_input, shm_size_input);
+		shm_unlink(shm_input_name);
+		shm_unlink(shm_output_name);
+		exit(errno);
+	}
+
+	shared_buffer_output = (char*) mmap(0, shm_size_output, PROT_READ | PROT_WRITE, MAP_SHARED, shm_output_fd, 0);
+	if(shared_buffer_output == MAP_FAILED)
+	{
+		perror(NULL);
+		munmap(shared_buffer_input, shm_size_input);
+		shm_unlink(shm_input_name);
+		shm_unlink(shm_output_name);
+		exit(errno);
+	}
+	
+	*((size_t*)shared_buffer_output) = shm_size_output;
+	strcpy(shared_buffer_output + sizeof(size_t), outputMsg.c_str());
+}
+
+int closest_pagesize_multiple(int s)
+{
+	int dimens = getpagesize();
+	int c = s / dimens;
+	int r = s % dimens;
+	if(r == 0) return s;
+	return (c+1) * dimens; 
+}
+
+
+
 
