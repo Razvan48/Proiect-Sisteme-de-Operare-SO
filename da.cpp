@@ -12,6 +12,7 @@
 #include <semaphore.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <linux/limits.h>
 
 #include "communication.hpp"
 #include "inputParser.hpp"
@@ -36,6 +37,8 @@
 void init_shm_buffer(); // initializare memorie partajata
 
 void init_shm_semaphore(); // initializare semafor partajat
+
+char* get_answer();
 
 int main(int argc, char* argv[])
 {
@@ -110,7 +113,7 @@ int main(int argc, char* argv[])
 	sem_wait(sem_2);
 
 	// raspunsul de la the_daemon
-	printf("the_daemon: %s\n", shared_buffer_output);
+	printf("the_daemon: %s\n", get_answer());
 
 	// este datoria lui da sa incrementeze sem_2 pentru a putea efectua alta comanda da
 	sem_post(sem_2);
@@ -167,7 +170,7 @@ void init_shm_buffer()
 		exit(errno);
 	}
 
-	shm_size_input = getpagesize();
+	shm_size_input = PATH_MAX;
 	shared_buffer_input = (char*)mmap(0, shm_size_input, PROT_READ | PROT_WRITE, MAP_SHARED, shm_input_fd, 0);
 	if(shared_buffer_input == MAP_FAILED)
 	{
@@ -217,5 +220,27 @@ void init_shm_semaphore()
 		perror(NULL);
 		exit(errno);
 	}
+}
+
+char* get_answer()
+{
+	if(*((size_t*)shared_buffer_output) > shm_size_output)
+	{
+		size_t aux = shm_size_output;
+		shm_size_output = *((size_t*)shared_buffer_output);
+		munmap(shared_buffer_output, aux);
+
+		shared_buffer_output = (char*)mmap(0, shm_size_output, PROT_READ | PROT_WRITE, MAP_SHARED, shm_output_fd, 0);
+		if(shared_buffer_output == MAP_FAILED)
+		{
+			perror("map failed");
+			munmap(shared_buffer_input, shm_size_input);
+			shm_unlink(shm_input_name);
+			shm_unlink(shm_output_name);
+			exit(errno);
+		}
+	}
+
+	return shared_buffer_output + sizeof(size_t);
 }
 
