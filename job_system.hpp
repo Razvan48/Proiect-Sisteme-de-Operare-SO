@@ -477,6 +477,7 @@ std::string printAnalysisReport(int id)
 	auto it = jobs.find(id);
 	pthread_mutex_lock(&(it->second).m);
 
+	// TODO
 	// if (it->second.status != )
 	{
 		return "The task with ID " + std::to_string(it->first) + " is not finished";

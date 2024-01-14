@@ -42,9 +42,9 @@ void parseInput(int argc, char* argv[], TaskType& taskType, std::string& dir, in
             "  -S, --suspend <id>       suspend task with <id>\n"
             "  -R, --resume <id>        resume task with <id>\n"
             "  -r, --remove <id>        remove the analysis with the given <id>\n"
-            "  -i, --info <id>          print status about the analysis with <id> (pending, progress, d\n"			// TODO: completeaza
-            "  -l, --list               list all analysis tasks, with their ID and the corresponding root p\n"		// TODO: completeaza
-            "  -p, --print <id>         print analysis report for those tasks that are \"done\"\n"
+            "  -i, --info <id>          print status about the analysis with <id> (pending, progress, done)\n"
+            "  -l, --list               list all analysis tasks, with their ID and the corresponding root path\n"
+            "  -p, --print <id>         print the analysis report for the task with <id> if it is \"done\"\n"
             "  -t, --terminate          terminates the daemon\n\n"
         );
 
