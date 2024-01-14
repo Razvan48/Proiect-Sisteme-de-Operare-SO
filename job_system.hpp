@@ -45,13 +45,14 @@ struct Job
 	int nrBytesTotal; //calculam procentul de finalizare ca 1.0 * nrBytesCrt / nrBytesTotal
 	int nrFiles;
 	int nrDir;
+	bool finished;
 	
 	Job() = default;
 	
 	Job(const std::string& path, int priority, JobStatus status):
-		path(path), priority(priority), status(status), nrBytesCrt(0), nrBytesTotal(0), nrFiles(0), nrDir(0)
+		path(path), priority(priority), status(status), nrBytesCrt(0), nrBytesTotal(0), nrFiles(0), nrDir(0), finished(false)
 	{
-	
+		
 	}
 };
 
@@ -177,7 +178,6 @@ std::string unPauseJob(int id) // seteaza flag-ul de status la un job ca Running
 	return "Resumed task with ID '" + std::to_string(id) + '\'';
 }
 
-// TODO: de facut un task pt asta
 void changePriority(int id, int priority) //reseteaza priority-ul unui job
 {
 	//verificam daca exista id-ul respectiv
@@ -200,7 +200,6 @@ std::string deleteJob(int id) //sterge job-ul cu id-ul dat
 		return "ID '" + std::to_string(id) + "' not found";
 	}
 	
-	/* TODO: EROARE: Error: In deleteJob(1) pthread_join failed -> No such file or directory */
 	pthread_mutex_lock(&(jobs.find(id)->second.m));
 	std::string pathJob = jobs.find(id)->second.path;
 	pthread_mutex_unlock(&(jobs.find(id)->second.m));
@@ -343,6 +342,9 @@ void* threadWork(void* job) //functia rulata de fiecare thread in parte
 	processDirectory(path, ((Job*)job)->nrBytesTotal,*((Job*)job), 0); //mai intai vedem cati bytes sunt in total, apoi mai parcurgem inca o data
 	//facem 2 parcurgeri in loc de una doar ca sa putem afisa o evolutie liniara procentului de finalizare atunci cand il cere userul
 	
+	pthread_mutex_lock(&(((Job*)job)->m));
+	((Job*)job)->finished = true;
+	pthread_mutex_unlock(&(((Job*)job)->m));
 	
 	//alt cod pt a verifica daca user-ul vrea sa inchida thread-ul
 	
@@ -462,27 +464,107 @@ std::string infoJob(int id)
 	pthread_mutex_unlock(&(it->second).m);
 
 	return msg;
-	//return "Info... for task with ID '" + std::to_string(id) + '\'';
+}
+
+std::string printAnalysisReportDirectory(const std::string& root, const std::string& sub, const int& nrBytesTotal, int& nrBytes)
+{
+	std::string path = root + sub;
+	std::string msg;
+	
+	// determina dimensiunea lui path
+	DIR *dir = opendir(path.c_str());
+
+	if (!dir)
+	{
+		return "ERROR";
+	}
+	
+	struct dirent *direntp;
+
+	while ((direntp = readdir(dir)) != NULL)
+	{
+		// Ignora directoarele "." (curent) si ".." (parintele)
+		if (strcmp(direntp->d_name, ".") == 0 || strcmp(direntp->d_name, "..") == 0)
+		{
+			continue;
+		}
+
+		if (direntp->d_type == DT_REG)	// fisier
+		{
+			std::string filePath = path + "/" + direntp->d_name;
+
+			struct stat st;
+			stat(filePath.c_str(), &st);
+			nrBytes += st.st_size;
+		}
+		else if (direntp->d_type == DT_DIR)	// director
+		{
+			std::string subDir = sub + '/' + direntp->d_name;
+
+			int nrBytesSub = 0;
+			msg += printAnalysisReportDirectory(root, subDir, nrBytesTotal, nrBytesSub);
+
+			if (sub.size() == 0)
+			{
+				msg += "\n|";
+			}
+
+			nrBytes += nrBytesSub;
+		}
+	}
+	
+	closedir(dir);
+
+	std::string currentMsg;
+
+	if (sub.size() == 0)
+	{
+		// path
+		currentMsg = path;
+	}
+	else
+	{
+		// path
+		currentMsg = "\n|-" + sub;
+	}
+
+	// usage
+	currentMsg += "   " + std::to_string(100.0 * nrBytes / nrBytesTotal) + "%";
+
+	// size
+	currentMsg += "   " + std::to_string(1.0 * nrBytes / 1024.0 / 1024.0) + "MB";
+
+	// new line
+	if (sub.size() == 0)
+	{
+		currentMsg += "\n|";
+	}
+
+	return currentMsg + msg;
 }
 
 std::string printAnalysisReport(int id)
 {
 	// verifica mai intai daca jobul este gata
 	auto it = jobs.find(id);
-	pthread_mutex_lock(&(it->second).m);
 
-	// TODO
-	// if (it->second.status != )
+	pthread_mutex_lock(&(it->second).m);
+	
+	if (!it->second.finished)
 	{
+		pthread_mutex_unlock(&(it->second).m);
 		return "The task with ID " + std::to_string(it->first) + " is not finished";
 	}
+ 
+	// TODO: foloseste CACHE daca il avem
+	int nrBytes = 0;
+	std::string msg = "\nPath          Usage          Size\n";
+	msg += printAnalysisReportDirectory(it->second.path, "", it->second.nrBytesTotal, nrBytes);
+
+	// TODO: debug -> nu avem mereu acelasi nr de bytes
+	outJobs << std::endl << it->second.nrBytesTotal << " /vs/ " << nrBytes << std::endl;
 
 	pthread_mutex_unlock(&(it->second).m);
-
-	std::string msg = "Path          Usage          Size\n";
-
-	// TODO: pentru fiecare subdirector -> calculeaza cat ocupa + size in MB
-	// CACHE: foloseste cache-ul
 
 	return msg;
 } 
