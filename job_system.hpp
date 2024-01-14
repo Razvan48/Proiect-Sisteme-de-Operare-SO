@@ -112,7 +112,6 @@ std::string addJob(const std::string& path, int priority = 1)
 			return "ERROR";
 		}
 
-		/* TODO: Error getting file status: No such file or directory */
 		if (pthread_create(&(jobs[pathToId[path]].thr), NULL, threadWork, &(jobs[pathToId[path]])))
 		{
 			outJobs << "Error: In addJob pthread_create failed\n";
@@ -122,7 +121,7 @@ std::string addJob(const std::string& path, int priority = 1)
 		
 		return "Created analysis task with ID '" + std::to_string(pathToId[path]) + "' for '" + path + "' and priority '" + getPriority(priority) + '\'';
 	}
-	else //exista jobul (in acest caz doar dau update la prioritate)
+	else // exista jobul (in acest caz doar dau update la prioritate)
 	{
 		pthread_mutex_lock(&(jobs[pathToId[path]].m));
 		jobs[pathToId[path]].priority = priority;
@@ -471,4 +470,25 @@ std::string infoJob(int id)
 	- verifica daca exista ID-ul printre task-urile noastra => ID 100 not found
 	- daca totul merge
 */
+
+std::string printAnalysisReport(int id)
+{
+	// verifica mai intai daca jobul este gata
+	auto it = jobs.find(id);
+	pthread_mutex_lock(&(it->second).m);
+
+	// if (it->second.status != )
+	{
+		return "The task with ID " + std::to_string(it->first) + " is not finished";
+	}
+
+	pthread_mutex_unlock(&(it->second).m);
+
+	std::string msg = "Path          Usage          Size\n";
+
+	// TODO: pentru fiecare subdirector -> calculeaza cat ocupa + size in MB
+	// CACHE: foloseste cache-ul
+
+	return msg;
+} 
 
