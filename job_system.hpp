@@ -435,7 +435,7 @@ std::string infoJob(int id)
 		return "ID '" + std::to_string(id) + "' not found";
 	}
 
-	// TODO
+	// TODO: cred ca aici ar trb sa afisam doar status (preparing, inprogress, done)
 	
 	std::string msg = 
 	" ID  PRI   Path                  Done Status              Details\n";
