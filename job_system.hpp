@@ -334,6 +334,12 @@ void processDirectory(const std::string& path, int& nrBytes, Job& job, int index
 			continue;
 		}
 
+		// este shortcut
+		if (S_ISLNK(fileStat.st_mode)) {
+			nrBytes += fileStat.st_size;
+			continue;
+		}
+
 		//este fisier sau director?
 		if (S_ISDIR(fileStat.st_mode))
 		{
