@@ -35,8 +35,8 @@ Utilitarul la linia de comanda se va numi "da" si trebuie sa expuna urmatoarele 
       -S, --suspend <id>       suspend task with <id>
       -R, --resume <id>        resume task with <id>
       -r, --remove <id>        remove the analysis with the given <id>
-      -i, --info <id>          print status about the analysis with <id> (pending, progress, d
-      -l, --list               list all analysis tasks, with their ID and the corresponding root p
-      -p, --print <id>         print analysis report for those tasks that are "done"
+      -i, --info <id>          print status about the analysis with <id> (pending, progress, done)
+      -l, --list               list all analysis tasks, with their ID and the corresponding root path
+      -p, --print <id>         print the analysis report for the task with <id> if it is "done"
       -t, --terminate          terminates the daemon
 ```

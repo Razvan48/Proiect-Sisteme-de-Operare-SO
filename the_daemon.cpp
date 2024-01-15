@@ -142,8 +142,7 @@ int main(int argc, char* argv[])
 			case TaskType::PRINT:
 				id = *intInput;
 
-				// TODO
-				// outputMsg = 
+				outputMsg = printAnalysisReport(id);
 			break;
 			
 			case TaskType::TERMINATE:
