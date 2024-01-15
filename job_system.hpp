@@ -119,6 +119,27 @@ std::string addJob(const std::string& path, int priority = 1)
 			perror(NULL);
 			return "ERROR";
 		}
+
+     	int newPriority;
+        switch (priority) { // set priority
+            case 1:
+                newPriority = sched_get_priority_min(SCHED_OTHER); // schedule policy min
+                break;
+            case 2:
+                newPriority = sched_get_priority_max(SCHED_OTHER) / 2; // normal
+                break;
+            case 3:
+                newPriority = sched_get_priority_max(SCHED_OTHER); // high
+                break;
+            default:
+                outJobs << "Invalid priority level" << std::endl;
+                return "ERROR";
+        }
+
+       if (pthread_setschedprio(jobs[pathToId[path]].thr, newPriority) != 0) {
+            outJobs << "Failed to set thread priority" << std::endl;
+            return "ERROR";
+        }
 		
 		return "Created analysis task with ID '" + std::to_string(pathToId[path]) + "' for '" + path + "' and priority '" + getPriority(priority) + '\'';
 	}
@@ -126,8 +147,29 @@ std::string addJob(const std::string& path, int priority = 1)
 	{
 		pthread_mutex_lock(&(jobs[pathToId[path]].m));
 		jobs[pathToId[path]].priority = priority;
+
+     	int newPriority;
+        switch (priority) { // set priority
+            case 1:
+                newPriority = sched_get_priority_min(SCHED_OTHER); // schedule policy min
+                break;
+            case 2:
+                newPriority = sched_get_priority_max(SCHED_OTHER) / 2; // normal
+                break;
+            case 3:
+                newPriority = sched_get_priority_max(SCHED_OTHER); // high
+                break;
+            default:
+                outJobs << "Invalid priority level" << std::endl;
+                return "ERROR";
+        }
+
+        if (pthread_setschedprio(jobs[pathToId[path]].thr, newPriority) != 0) {
+            outJobs << "Failed to set thread priority" << std::endl;
+            return "ERROR";
+        }
+
 		pthread_mutex_unlock(&(jobs[pathToId[path]].m));
-		
 		return "Directory '" + path + "' is already included in the analysis with ID '" + std::to_string(pathToId[path]) + "'. Only updated the priority to '" + std::to_string(priority) + '\'';
 	}
 	
@@ -148,7 +190,7 @@ void stopJob(int id) //seteaza flag-ul de status la un job ca Ending (thread-ul 
 	pthread_mutex_unlock(&(jobs.find(id)->second.m));
 }
 
-std::string pauseJob(int id) // seteaza flag-ul de status la un job ca Paused (thread-ul se va pune pe sleep cand va fi safe)
+std::string pauseJob(int id) // seteaza flag-ul de status a un job ca Paused (thread-ul se va pune pe sleep cand va fi safe)
 {
 	// verificam daca exista id-ul respectiv
 	if (jobs.find(id) == jobs.end())
@@ -189,7 +231,30 @@ void changePriority(int id, int priority) //reseteaza priority-ul unui job
 	}
 	
 	pthread_mutex_lock(&(jobs.find(id)->second.m));
+
+
 	jobs.find(id)->second.priority = priority;
+
+ 	int newPriority;
+    switch (priority) {
+        case 1:
+            newPriority = sched_get_priority_min(SCHED_OTHER); // scheduling policy, min
+            break;
+        case 2:
+            newPriority = sched_get_priority_max(SCHED_OTHER) / 2; // normal
+            break;
+        case 3:
+            newPriority = sched_get_priority_max(SCHED_OTHER); // max
+            break;
+        default:
+            outJobs << "Invalid priority level" << std::endl;
+    }
+
+    if (pthread_setschedprio(jobs.find(id)->second.thr, newPriority) != 0) { // set priority
+        outJobs << "Failed to set thread priority" << std::endl;
+        return;
+    }
+
 	pthread_mutex_unlock(&(jobs.find(id)->second.m));
 }
 
