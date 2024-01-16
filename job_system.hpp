@@ -560,13 +560,13 @@ std::string printAnalysisReportDirectory(const std::string& root, const std::str
 			continue;
 		}
 
-		if ((direntp->d_type == DT_LNK) // symbolic link
+		if (direntp->d_type == DT_LNK) // symbolic link
 		{
 			std::string filePath = path + "/" + direntp->d_name;
 			
 			struct stat st;
 			stat(filePath.c_str(), &st);
-			nrBytes += fileStat.st_size;
+			nrBytes += st.st_size;
 		}
 		else if (direntp->d_type == DT_REG)	// regular file
 		{
