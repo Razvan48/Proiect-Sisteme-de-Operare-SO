@@ -643,7 +643,7 @@ std::string printAnalysisReport(int id)
  
 	// TODO: foloseste CACHE daca il avem
 	int nrBytes = 0;
-	std::string msg = "\nPath          Usage          Size\n";
+	std::string msg = "Path          Usage          Size\n";
 	msg += printAnalysisReportDirectory(it->second.path, "", it->second.nrBytesTotal, nrBytes);
 
 	// TODO: debug -> nu avem mereu acelasi nr de bytes

@@ -20,9 +20,6 @@
 // TODO: DEBUG
 std::ofstream fout("the_daemon.output");
 
-//in codul de mai jos am comentat tot ce implica jobs (avem std::map jobs in job_system.hpp)
-
-
 	char shm_input_name[] = "/shared_buffer_input";
 	char shm_output_name[] = "/shared_buffer_output";
 	char semaphore_1_name[] = "/shared_semaphore_1";

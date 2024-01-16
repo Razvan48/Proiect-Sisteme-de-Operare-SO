@@ -113,7 +113,7 @@ int main(int argc, char* argv[])
 	sem_wait(sem_2);
 
 	// raspunsul de la the_daemon
-	printf("the_daemon: %s\n", get_answer());
+	printf("%s\n", get_answer());
 
 	// este datoria lui da sa incrementeze sem_2 pentru a putea efectua alta comanda da
 	sem_post(sem_2);
