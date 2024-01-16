@@ -57,13 +57,14 @@ struct Job
 
 struct CacheEntry {
     time_t lastModified;
-    int nrBytes;
+    int nrBytes, nrFiles, nrDir;
     std::string msg;
+    pthread_mutex_t m;
 };
 
 std::map<int, Job> jobs;
 std::map<std::string, int> pathToId; //folosim asta ca sa aflam daca path-ul e deja in lucru de un job deja existent
-std::unordered_map<std::string, CacheEntry> cache; // cache
+std::unordered_map<std::string, CacheEntry> cache1, cache2; // cache
 
 
 std::string getPriority(int priority)
@@ -319,16 +320,21 @@ void processDirectory(const std::string& path, int& nrBytes, Job& job, int index
 	//aici se incheie cod de verificare status thread
 
 	// avem cache
-    if (cache.find(path) != cache.end()) {
-        CacheEntry& entry = cache[path];
+    if (cache1.find(path) != cache1.end()) {
 
+    	pthread_mutex_lock(&cache1[path].m);
+        CacheEntry& entry = cache1[path];
         // verificam daca este la curent
         struct stat dirStat;
         if (stat(path.c_str(), &dirStat) == 0 && entry.lastModified == dirStat.st_mtime) {
             nrBytes += entry.nrBytes; // variabile caches
+            job.nrDir += entry.nrDir;
+            job.nrFiles += entry.nrFiles;
+            pthread_mutex_unlock(&cache1[path].m);
             return;
+            
         }
-    }
+    } 
 
 	DIR *dir = opendir(path.c_str());
 
@@ -341,7 +347,10 @@ void processDirectory(const std::string& path, int& nrBytes, Job& job, int index
 	
 	struct dirent *entry;
 	struct stat fileStat;
+	struct stat dirSt;
+	stat(path.c_str(), &dirSt);
 
+	int auxF = jobs.nrFiles, auxD = jobs.nrDir;
 	while ((entry = readdir(dir)) != NULL)
 	{
 		char filePath[1024];
@@ -368,18 +377,20 @@ void processDirectory(const std::string& path, int& nrBytes, Job& job, int index
 				continue;
 			}
 
-
 			// Apelam recursiv
+			int nrFiles = job.nrFiles, nrDir = job.nrDir;
 			processDirectory(filePath, nrBytes, job, indexOfScan);
 
-			cache[path] = {fileStat.st_mtime, fileStat.st_size, ""}; // update cache
-			
 			if (indexOfScan == 1) // a doua parcurgere
 			{
 				pthread_mutex_lock(&job.m);
 				++job.nrDir;
 				pthread_mutex_unlock(&job.m);
 			}
+
+			pthread_mutex_lock(&cache1[filePath].m);
+			cache1[filePath] = {fileStat.st_mtime, fileStat.st_size, job.nrFiles - nrFiles, job.nrDir - nrDir, ""}; // update cache
+			pthread_mutex_unlock(&cache1[filePath].m);
 
 			// adauga dimensiunea folderului in sine
 			nrBytes += fileStat.st_size;
@@ -391,17 +402,24 @@ void processDirectory(const std::string& path, int& nrBytes, Job& job, int index
 
 			// Adunam numarul de bytes
 
-			cache[filePath] = {fileStat.st_mtime, fileStat.st_size, ""};
-			
 			pthread_mutex_lock(&job.m);
 			nrBytes += fileStat.st_size;
 			if (indexOfScan == 1) // a doua parcurgere
 				++job.nrFiles;
+
+			pthread_mutex_lock(&cache1[filePath].m);
+			cache1[filePath] = {fileStat.st_mtime, fileStat.st_size, (indexOfScan == 1), 0, ""};
+			pthread_mutex_unlock(&cache1[filePath].m);
+
 			pthread_mutex_unlock(&job.m);
 		}
 	}
 	
 	closedir(dir);
+
+	pthread_mutex_lock(&cache1[path].m);
+	cache1[path] = {dirSt.st_mtime, nrBytes, jobs.nrFiles - auxF, jobs.nrDir - auxD};
+	pthread_mutex_unlock(&cache1[path].m);
 }
 
 void* threadWork(void* job) //functia rulata de fiecare thread in parte
@@ -564,19 +582,23 @@ std::string infoJob(int id)
 	return msg;
 }
 
-std::string printAnalysisReportDirectory(const std::string& root, const std::string& sub, const int& nrBytesTotal, int& nrBytes)
+std::string printAnalysisReportDirectory(const std::string& root, const std::string& sub, const int& nrBytesTotal, int& nrBytes, int nrFiles = 0, int nrDir = 0)
 {
 	std::string path = root + sub;
 	std::string msg;
 
-	// exista pathul
-    if (cache.find(path) != cache.end()) {
-        CacheEntry& entry = cache[path];
+	// exista cache
+	pthread_mutex_lock(&cache2[path].m);
+	outJobs << std::endl <<"here" << std::endl;
+    if (cache2.find(path) != cache2.end()) {
+        CacheEntry& entry = cache2[path];
 
         struct stat st;
         if (stat(path.c_str(), &st) == 0 && entry.lastModified == st.st_mtime) { // este acelasi timp
             nrBytes += entry.nrBytes; // adaugam nrBytes;
             msg += entry.msg; // msg
+            nrFiles += entry.nrFiles;
+            nrDir += entry.nrDir;
 
 	    	std::string currentMsg;
 			if (sub.size() == 0)
@@ -602,9 +624,13 @@ std::string printAnalysisReportDirectory(const std::string& root, const std::str
 				currentMsg += "\n|";
 			}
 
+			pthread_mutex_unlock(&cache2[path].m);
 			return currentMsg + msg;
+
         }
     } 
+
+    pthread_mutex_unlock(&cache2[path].m);
 	
 	// determina dimensiunea lui path
 	DIR *dir = opendir(path.c_str());
@@ -633,7 +659,9 @@ std::string printAnalysisReportDirectory(const std::string& root, const std::str
 			struct stat st;
 			stat(filePath.c_str(), &st);
 			nrBytes += st.st_size;
-			cache[filePath] = {st.st_mtime, st.st_size};
+			pthread_mutex_lock(&cache2[filePath].m);
+			cache2[filePath] = {st.st_mtime, st.st_size, 0, 0};
+			pthread_mutex_unlock(&cache2[filePath].m);
 		}
 		else if (direntp->d_type == DT_REG)	// regular file
 		{
@@ -642,15 +670,19 @@ std::string printAnalysisReportDirectory(const std::string& root, const std::str
 			struct stat st;
 			stat(filePath.c_str(), &st);
 			nrBytes += st.st_size;
-			cache[filePath] = {st.st_mtime, st.st_size};
+			++nrFiles;
+			pthread_mutex_lock(&cache2[filePath].m);
+			cache2[filePath] = {st.st_mtime, st.st_size, 1, 0};
+			pthread_mutex_unlock(&cache2[filePath].m);
 		}
 		else if (direntp->d_type == DT_DIR)	// directory
 		{
 			std::string subDir = sub + '/' + direntp->d_name;
 
 			int nrBytesSub = 0;
-			msg += printAnalysisReportDirectory(root, subDir, nrBytesTotal, nrBytesSub);
+			msg += printAnalysisReportDirectory(root, subDir, nrBytesTotal, nrBytesSub, nrFiles, nrDir);
 			nrBytes += nrBytesSub;
+			++nrDir;
 
 			if (sub.size() == 0)
 			{
@@ -666,7 +698,9 @@ std::string printAnalysisReportDirectory(const std::string& root, const std::str
 	}
 	
 	closedir(dir);
-	cache[path] = {dirSt.st_mtime, nrBytes, msg};
+	pthread_mutex_lock(&cache2[path].m);
+	cache2[path] = {dirSt.st_mtime, nrBytes, nrFiles, nrDir, msg};
+	pthread_mutex_unlock(&cache2[path].m);
 
 	std::string currentMsg;
 
