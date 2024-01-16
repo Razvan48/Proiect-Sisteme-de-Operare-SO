@@ -358,6 +358,9 @@ void processDirectory(const std::string& path, int& nrBytes, Job& job, int index
 				++job.nrDir;
 				pthread_mutex_unlock(&job.m);
 			}
+
+			// adauga dimensiunea folderului in sine
+			nrBytes += fileStat.st_size;
 		}
 		else //fisier
 		{
@@ -582,13 +585,18 @@ std::string printAnalysisReportDirectory(const std::string& root, const std::str
 
 			int nrBytesSub = 0;
 			msg += printAnalysisReportDirectory(root, subDir, nrBytesTotal, nrBytesSub);
+			nrBytes += nrBytesSub;
 
 			if (sub.size() == 0)
 			{
 				msg += "\n|";
 			}
 
-			nrBytes += nrBytesSub;
+			// adauga dimensiunea folderului in sine
+			std::string filePath = root + sub;
+			struct stat st;
+			stat(filePath.c_str(), &st);
+			nrBytes += st.st_size;
 		}
 	}
 	
