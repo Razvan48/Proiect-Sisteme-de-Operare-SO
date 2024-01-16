@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <pthread.h>
+#include <unordered_map>
 
 // TODO: DEBUG
 std::ofstream outJobs("jobs.output");
@@ -54,8 +55,16 @@ struct Job
 	}
 };
 
+struct CacheEntry {
+    time_t lastModified;
+    int nrBytes;
+    std::string msg;
+};
+
 std::map<int, Job> jobs;
 std::map<std::string, int> pathToId; //folosim asta ca sa aflam daca path-ul e deja in lucru de un job deja existent
+std::unordered_map<std::string, CacheEntry> cache; // cache
+
 
 std::string getPriority(int priority)
 {
@@ -309,6 +318,18 @@ void processDirectory(const std::string& path, int& nrBytes, Job& job, int index
 	pthread_mutex_unlock(&job.m);
 	//aici se incheie cod de verificare status thread
 
+	// avem cache
+    if (cache.find(path) != cache.end()) {
+        CacheEntry& entry = cache[path];
+
+        // verificam daca este la curent
+        struct stat dirStat;
+        if (stat(path.c_str(), &dirStat) == 0 && entry.lastModified == dirStat.st_mtime) {
+            nrBytes += entry.nrBytes; // variabile caches
+            return;
+        }
+    }
+
 	DIR *dir = opendir(path.c_str());
 
 	if (!dir)
@@ -347,8 +368,11 @@ void processDirectory(const std::string& path, int& nrBytes, Job& job, int index
 				continue;
 			}
 
+
 			// Apelam recursiv
 			processDirectory(filePath, nrBytes, job, indexOfScan);
+
+			cache[path] = {fileStat.st_mtime, fileStat.st_size, ""}; // update cache
 			
 			if (indexOfScan == 1) // a doua parcurgere
 			{
@@ -366,6 +390,8 @@ void processDirectory(const std::string& path, int& nrBytes, Job& job, int index
 			//printf("File: %s\n", filePath);
 
 			// Adunam numarul de bytes
+
+			cache[filePath] = {fileStat.st_mtime, fileStat.st_size, ""};
 			
 			pthread_mutex_lock(&job.m);
 			nrBytes += fileStat.st_size;
@@ -542,6 +568,43 @@ std::string printAnalysisReportDirectory(const std::string& root, const std::str
 {
 	std::string path = root + sub;
 	std::string msg;
+
+	// exista pathul
+    if (cache.find(path) != cache.end()) {
+        CacheEntry& entry = cache[path];
+
+        struct stat st;
+        if (stat(path.c_str(), &st) == 0 && entry.lastModified == st.st_mtime) { // este acelasi timp
+            nrBytes += entry.nrBytes; // adaugam nrBytes;
+            msg += entry.msg; // msg
+
+	    	std::string currentMsg;
+			if (sub.size() == 0)
+			{
+				// path
+				currentMsg = path;
+			}
+			else
+			{
+				// path
+				currentMsg = "\n|-" + sub;
+			}
+
+			// usage
+			currentMsg += "   " + std::to_string(100.0 * nrBytes / nrBytesTotal) + "%";
+
+			// size
+			currentMsg += "   " + std::to_string(1.0 * nrBytes / 1024.0 / 1024.0) + "MB";
+
+			// new line
+			if (sub.size() == 0)
+			{
+				currentMsg += "\n|";
+			}
+
+			return currentMsg + msg;
+        }
+    } 
 	
 	// determina dimensiunea lui path
 	DIR *dir = opendir(path.c_str());
@@ -552,6 +615,8 @@ std::string printAnalysisReportDirectory(const std::string& root, const std::str
 	}
 	
 	struct dirent *direntp;
+	struct stat dirSt;
+	stat(path.c_str(), &dirSt);
 
 	while ((direntp = readdir(dir)) != NULL)
 	{
@@ -568,6 +633,7 @@ std::string printAnalysisReportDirectory(const std::string& root, const std::str
 			struct stat st;
 			stat(filePath.c_str(), &st);
 			nrBytes += st.st_size;
+			cache[filePath] = {st.st_mtime, st.st_size};
 		}
 		else if (direntp->d_type == DT_REG)	// regular file
 		{
@@ -576,6 +642,7 @@ std::string printAnalysisReportDirectory(const std::string& root, const std::str
 			struct stat st;
 			stat(filePath.c_str(), &st);
 			nrBytes += st.st_size;
+			cache[filePath] = {st.st_mtime, st.st_size};
 		}
 		else if (direntp->d_type == DT_DIR)	// directory
 		{
@@ -599,6 +666,7 @@ std::string printAnalysisReportDirectory(const std::string& root, const std::str
 	}
 	
 	closedir(dir);
+	cache[path] = {dirSt.st_mtime, nrBytes, msg};
 
 	std::string currentMsg;
 
@@ -652,7 +720,6 @@ std::string printAnalysisReport(int id)
 	std::string msg = "Path          Usage          Size\n";
 	msg += printAnalysisReportDirectory(it->second.path, "", it->second.nrBytesTotal, nrBytes);
 
-	// TODO: debug -> nu avem mereu acelasi nr de bytes
 	outJobs << std::endl << it->second.nrBytesTotal << " /vs/ " << nrBytes << std::endl;
 
 	pthread_mutex_unlock(&(it->second).m);
