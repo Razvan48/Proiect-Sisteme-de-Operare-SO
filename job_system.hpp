@@ -627,6 +627,12 @@ std::string printAnalysisReport(int id)
 	// verifica mai intai daca jobul este gata
 	auto it = jobs.find(id);
 
+	// verificam daca exista id-ul respectiv
+	if (it == jobs.end())
+	{
+		return "ID '" + std::to_string(id) + "' not found";
+	}
+
 	pthread_mutex_lock(&(it->second).m);
 	
 	if (!it->second.finished)
