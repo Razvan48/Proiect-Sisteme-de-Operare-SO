@@ -15,8 +15,6 @@
 // TODO: DEBUG
 std::ofstream outJobs("jobs.output");
 
-//putem sa mutam implementarile ulterior intr-un cpp
-
 int newId = 0; //variabila globala ce genereaza un nou id pentru fiecare task nou
 
 //important: map-ul de jobs si de pathToId nu vor fi niciodata accesate de un job, ci doar de job system, deci nu trb mutex
