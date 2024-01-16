@@ -15,7 +15,7 @@
 #include <linux/limits.h>
 
 #include "communication.hpp"
-#include "job_system.hpp"	// TODO: de folosit
+#include "job_system.hpp"
 
 // TODO: DEBUG
 std::ofstream fout("the_daemon.output");
