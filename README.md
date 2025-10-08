@@ -1,5 +1,5 @@
 # Proiect-Sisteme-de-Operare-SO
-&emsp; Proiect Sisteme de Operare (SO) Anul 2, Semestrul 1, Facultatea de Matematica si Informatica, Universitatea din Bucuresti <br/>
+&emsp; Proiect Sisteme de Operare (SO), Anul 2, Semestrul 1, Facultatea de Matematica si Informatica, Universitatea din Bucuresti <br/>
 
 ### &emsp; Membrii Echipa: <br/>
 Capatina Razvan Nicolae ($252$) <br/> 
